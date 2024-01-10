@@ -2,16 +2,21 @@ use crate::error::{Error, Result};
 use crate::utils::temp_dir;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
-pub enum ProgramLauguage {
-    #[serde(rename = "cpp")]
-    Cpp,
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct CppProgram {
+    pub path: String,
+    #[serde(default = "default_compile_args")]
+    pub compile_args: Vec<String>,
+}
+
+fn default_compile_args() -> Vec<String> {
+    vec!["-O2".to_string(), "-std=c++17".to_string()]
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Program {
-    pub language: ProgramLauguage,
-    pub path: String,
+pub enum Program {
+    #[serde(rename = "cpp")]
+    Cpp(CppProgram),
 }
 
 impl Program {
@@ -21,9 +26,9 @@ impl Program {
         input: Option<std::fs::File>,
         output: std::fs::File,
     ) -> Result<()> {
-        match self.language {
-            ProgramLauguage::Cpp => {
-                let exe_name = std::path::PathBuf::from(&self.path)
+        match self {
+            Self::Cpp(CppProgram { path, compile_args }) => {
+                let exe_name = std::path::PathBuf::from(path)
                     .file_stem()
                     .unwrap()
                     .to_str()
@@ -35,9 +40,8 @@ impl Program {
                     let output = std::process::Command::new("g++")
                         .arg("-o")
                         .arg(exe_path.clone())
-                        .arg("-O2")
-                        .arg("-std=c++17")
-                        .arg(&self.path)
+                        .args(compile_args)
+                        .arg(path)
                         .output()?;
                     if !output.status.success() {
                         return Err(Error::Compile(String::from_utf8(output.stderr).unwrap()));

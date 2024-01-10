@@ -1,10 +1,8 @@
 name: a_plus_b
 programs:
-  gen:
-    language: cpp
+  gen: !cpp
     path: ./gen.cpp
-  std:
-    language: cpp
+  std: !cpp
     path: ./std.cpp
 test_bundles:
   - name: sample
