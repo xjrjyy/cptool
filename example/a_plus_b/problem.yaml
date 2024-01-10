@@ -1,9 +1,16 @@
 name: a_plus_b
 programs:
-  gen: !cpp
-    path: ./gen.cpp
-  std: !cpp
-    path: ./std.cpp
+  gen:
+    info: !cpp
+      path: ./gen.cpp
+    time_limit_secs: 1.0
+    memory_limit_mb: 512
+  std:
+    info: !cpp
+      path: ./std.cpp
+      compile_args: [-O2, -std=c++14]
+    time_limit_secs: 1.0
+    memory_limit_mb: 512
 test_bundles:
   - name: sample
     generator: gen

@@ -1,20 +1,22 @@
 #[derive(Debug)]
 pub enum Error {
-    Serde(serde_yaml::Error),
-    Io(std::io::Error),
+    SerdeError(serde_yaml::Error),
+    IoError(std::io::Error),
     FileNotFound(String),
-    Compile(String),
+    CompileError(String, String),
+    TimeLimitExceeded(String),
+    RuntimeError(String),
 }
 
 impl From<serde_yaml::Error> for Error {
     fn from(error: serde_yaml::Error) -> Self {
-        Self::Serde(error)
+        Self::SerdeError(error)
     }
 }
 
 impl From<std::io::Error> for Error {
     fn from(error: std::io::Error) -> Self {
-        Self::Io(error)
+        Self::IoError(error)
     }
 }
 
@@ -23,18 +25,28 @@ impl Error {
         Self::FileNotFound(message.to_string())
     }
 
-    pub fn compile<T: std::fmt::Display>(message: T) -> Self {
-        Self::Compile(message.to_string())
+    pub fn compile_error<T: std::fmt::Display, U: std::fmt::Display>(info: T, message: U) -> Self {
+        Self::CompileError(info.to_string(), message.to_string())
+    }
+
+    pub fn time_limit_exceeded<T: std::fmt::Display>(info: T) -> Self {
+        Self::TimeLimitExceeded(info.to_string())
+    }
+
+    pub fn runtime_error<T: std::fmt::Display>(info: T) -> Self {
+        Self::RuntimeError(info.to_string())
     }
 }
 
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match &self {
-            Error::Serde(error) => write!(f, "serde error: {}", error),
-            Error::Io(error) => write!(f, "io error: {}", error),
-            Error::FileNotFound(message) => write!(f, "file not found: {}", message),
-            Error::Compile(message) => write!(f, "compile error: {}", message),
+            Error::SerdeError(error) => write!(f, "serde error: {}", error),
+            Error::IoError(error) => write!(f, "io error: {}", error),
+            Error::FileNotFound(info) => write!(f, "file not found: {}", info),
+            Error::CompileError(info, message) => write!(f, "{} compile error: {}", info, message),
+            Error::TimeLimitExceeded(info) => write!(f, "{} time limit exceeded", info),
+            Error::RuntimeError(info) => write!(f, "{} runtime error", info),
         }
     }
 }
