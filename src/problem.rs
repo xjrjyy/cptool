@@ -24,10 +24,7 @@ impl TestBundle {
     pub fn generate(&self, programs: &Programs, inputs: Vec<std::fs::File>) -> Result<()> {
         let generator = programs
             .get(&self.generator_name)
-            .ok_or(Error::file_not_found(format!(
-                "{} (generator)",
-                &self.generator_name
-            )))?;
+            .ok_or(Error::file_not_found(format!("{}", &self.generator_name)))?;
         self.cases
             .iter()
             .zip(inputs.into_iter())
@@ -79,10 +76,7 @@ impl Problem {
             let solution = self
                 .programs
                 .get(&self.solution_name)
-                .ok_or(Error::file_not_found(format!(
-                    "{} (solution)",
-                    &self.solution_name
-                )))?;
+                .ok_or(Error::file_not_found(format!("{}", &self.solution_name)))?;
             inputs
                 .into_iter()
                 .zip(answers.into_iter())
