@@ -1,0 +1,20 @@
+name: a_plus_b
+programs:
+  gen:
+    language: cpp
+    path: ./gen.cpp
+  std:
+    language: cpp
+    path: ./std.cpp
+test_bundles:
+  - name: sample
+    generator: gen
+    cases:
+      - args: [20]
+  - name: main
+    generator: gen
+    cases:
+      - args: [10]
+      - args: [10000000]
+      - args: [1000000000]
+solution: std

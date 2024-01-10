@@ -1,5 +1,6 @@
 use clap::Parser;
 use cptool::problem::Problem;
+use std::time::Instant;
 
 #[derive(Debug, Parser)]
 struct Args {
@@ -13,6 +14,8 @@ struct Args {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
 
+    let start = Instant::now();
+
     let work_dir = std::path::PathBuf::from(args.work_dir);
     std::env::set_current_dir(&work_dir)?;
 
@@ -22,6 +25,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let output_dir = std::path::PathBuf::from(args.output_dir);
     std::fs::create_dir_all(&output_dir)?;
     problem.generate(output_dir)?;
+
+    let elapsed = start.elapsed();
+    println!(
+        "elapsed: {}.{:03}s",
+        elapsed.as_secs(),
+        elapsed.subsec_millis()
+    );
 
     Ok(())
 }

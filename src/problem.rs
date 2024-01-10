@@ -1,5 +1,10 @@
+use crate::error::{Error, Result};
 use crate::program::Program;
+use crate::utils::temp_dir;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+
+type Programs = HashMap<String, Program>;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TestCase {
@@ -10,18 +15,24 @@ pub struct TestCase {
 pub struct TestBundle {
     // TODO: generator or raw input
     pub name: String,
-    pub generator: Program,
-    pub test_cases: Vec<TestCase>,
+    #[serde(rename = "generator")]
+    pub generator_name: String,
+    pub cases: Vec<TestCase>,
 }
 
 impl TestBundle {
-    pub fn generate(&self, inputs: Vec<std::fs::File>) -> Result<(), Box<dyn std::error::Error>> {
-        self.test_cases
+    pub fn generate(&self, programs: &Programs, inputs: Vec<std::fs::File>) -> Result<()> {
+        let generator = programs
+            .get(&self.generator_name)
+            .ok_or(Error::file_not_found(format!(
+                "{} (generator)",
+                &self.generator_name
+            )))?;
+        self.cases
             .iter()
             .zip(inputs.into_iter())
-            .for_each(|(case, input)| {
-                self.generator.run(case.args.clone(), None, input).unwrap();
-            });
+            .map(|(case, input)| generator.run(case.args.clone(), None, input))
+            .collect::<Result<_>>()?;
         Ok(())
     }
 }
@@ -29,14 +40,22 @@ impl TestBundle {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Problem {
     pub name: String,
+    pub programs: Programs,
     pub test_bundles: Vec<TestBundle>,
-    pub solution: Program,
+    #[serde(rename = "solution")]
+    pub solution_name: String,
 }
 
 impl Problem {
-    pub fn generate(&self, path: std::path::PathBuf) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn generate(&self, path: std::path::PathBuf) -> Result<()> {
+        let temp_dir = temp_dir();
+        if temp_dir.exists() {
+            std::fs::remove_dir_all(&temp_dir)?;
+        }
+        std::fs::create_dir_all(&temp_dir)?;
+
         for test_bundle in &self.test_bundles {
-            let names = (0..test_bundle.test_cases.len())
+            let names = (0..test_bundle.cases.len())
                 .map(|i| format!("{}-{:02}", &test_bundle.name, i))
                 .collect::<Vec<_>>();
 
@@ -44,25 +63,31 @@ impl Problem {
                 .iter()
                 .map(|name| path.join(format!("{}.in", &name)))
                 .map(std::fs::File::create)
-                .collect::<Result<_, _>>()?;
-            test_bundle.generate(inputs)?;
+                .collect::<std::io::Result<_>>()?;
+            test_bundle.generate(&self.programs, inputs)?;
 
             let inputs: Vec<_> = names
                 .iter()
                 .map(|name| path.join(format!("{}.in", &name)))
                 .map(std::fs::File::open)
-                .collect::<Result<_, _>>()?;
+                .collect::<std::io::Result<_>>()?;
             let answers: Vec<_> = names
                 .iter()
                 .map(|name| path.join(format!("{}.ans", &name)))
                 .map(std::fs::File::create)
-                .collect::<Result<_, _>>()?;
+                .collect::<std::io::Result<_>>()?;
+            let solution = self
+                .programs
+                .get(&self.solution_name)
+                .ok_or(Error::file_not_found(format!(
+                    "{} (solution)",
+                    &self.solution_name
+                )))?;
             inputs
                 .into_iter()
                 .zip(answers.into_iter())
-                .for_each(|(input, answer)| {
-                    self.solution.run(vec![], Some(input), answer).unwrap();
-                });
+                .map(|(input, answer)| solution.run(vec![], Some(input), answer))
+                .collect::<Result<_>>()?;
         }
         Ok(())
     }
