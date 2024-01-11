@@ -3,7 +3,9 @@ use crate::program::Program;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-type Programs = HashMap<String, Program>;
+pub trait GetProgram {
+    fn get_program(&self, name: &str) -> Result<&Program>;
+}
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TestCase {
@@ -20,10 +22,11 @@ pub struct TestBundle {
 }
 
 impl TestBundle {
-    pub fn generate(&self, programs: &Programs, inputs: Vec<std::fs::File>) -> Result<()> {
-        let generator = programs
-            .get(&self.generator_name)
-            .ok_or(Error::file_not_found(format!("{}", &self.generator_name)))?;
+    pub fn generate<T>(&self, programs: &T, inputs: Vec<std::fs::File>) -> Result<()>
+    where
+        T: GetProgram,
+    {
+        let generator = programs.get_program(&self.generator_name)?;
         self.cases
             .iter()
             .zip(inputs.into_iter())
@@ -36,10 +39,16 @@ impl TestBundle {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Problem {
     pub name: String,
-    pub programs: Programs,
+    pub programs: HashMap<String, Program>,
     pub test_bundles: Vec<TestBundle>,
     #[serde(rename = "solution")]
     pub solution_name: String,
+}
+
+impl GetProgram for Problem {
+    fn get_program(&self, name: &str) -> Result<&Program> {
+        self.programs.get(name).ok_or(Error::file_not_found(name))
+    }
 }
 
 pub struct GenerateConfig {
@@ -81,7 +90,7 @@ impl Problem {
                 .map(|name| output_dir.join(format!("{}.in", &name)))
                 .map(std::fs::File::create)
                 .collect::<std::io::Result<_>>()?;
-            test_bundle.generate(&self.programs, inputs)?;
+            test_bundle.generate(self, inputs)?;
 
             let inputs: Vec<_> = names
                 .iter()
@@ -93,10 +102,7 @@ impl Problem {
                 .map(|name| output_dir.join(format!("{}.ans", &name)))
                 .map(std::fs::File::create)
                 .collect::<std::io::Result<_>>()?;
-            let solution = self
-                .programs
-                .get(&self.solution_name)
-                .ok_or(Error::file_not_found(format!("{}", &self.solution_name)))?;
+            let solution = self.get_program(&self.solution_name)?;
             inputs
                 .into_iter()
                 .zip(answers.into_iter())
