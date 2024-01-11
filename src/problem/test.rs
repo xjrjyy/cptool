@@ -13,14 +13,24 @@ pub trait GetTestBundle {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TestCase {
+    // TODO: raw input
+    #[serde(rename = "generator")]
+    pub generator_name: String,
     pub args: Vec<String>,
+}
+
+impl TestCase {
+    pub fn generate<T>(&self, programs: &T, input: std::fs::File) -> Result<()>
+    where
+        T: GetProgram,
+    {
+        let generator = programs.get_program(&self.generator_name)?;
+        generator.run(self.args.clone(), None, input)
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TestBundle {
-    // TODO: generator or raw input
-    #[serde(rename = "generator")]
-    pub generator_name: String,
     pub cases: Vec<TestCase>,
 }
 
@@ -29,13 +39,11 @@ impl TestBundle {
     where
         T: GetProgram,
     {
-        let generator = programs.get_program(&self.generator_name)?;
         self.cases
             .iter()
             .zip(inputs.into_iter())
-            .map(|(case, input)| generator.run(case.args.clone(), None, input))
-            .collect::<Result<_>>()?;
-        Ok(())
+            .map(|(case, input)| case.generate(programs, input))
+            .collect::<Result<_>>()
     }
 }
 

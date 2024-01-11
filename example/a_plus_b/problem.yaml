@@ -1,36 +1,38 @@
 name: a_plus_b
-export_oj: !syzoj
+export_oj: syzoj
 programs:
   gen:
     info: !cpp
       path: ./gen.cpp
     time_limit_secs: 1.0
-    memory_limit_mb: 512
+    memory_limit_mb: 512.0
   std:
     info: !cpp
       path: ./std.cpp
       compile_args: [-O2, -std=c++14]
     time_limit_secs: 1.0
-    memory_limit_mb: 512
+    memory_limit_mb: 512.0
 test:
   bundles:
     sample:
-      generator: gen
       cases:
-        - args: [20]
+      - generator: gen
+        args: ['20']
     main:
-      generator: gen
       cases:
-        - args: [10]
-        - args: [10000000]
-        - args: [1000000000]
+      - generator: gen
+        args: ['10']
+      - generator: gen
+        args: ['10000000']
+      - generator: gen
+        args: ['1000000000']
   tasks:
     sample:
-      score: 1
-      type: !min
+      score: 1.0
+      type: min
       bundles: [sample]
     main:
-      score: 99
-      type: !sum
+      score: 99.0
+      type: sum
       bundles: [main]
 solution: std
