@@ -1,6 +1,5 @@
 use crate::error::{Error, Result};
 use crate::program::Program;
-use crate::utils::temp_dir;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -43,34 +42,55 @@ pub struct Problem {
     pub solution_name: String,
 }
 
+pub struct GenerateConfig {
+    pub output_dir: std::path::PathBuf,
+    pub subdir: bool,
+}
+
 impl Problem {
-    pub fn generate(&self, path: std::path::PathBuf) -> Result<()> {
-        let temp_dir = temp_dir();
+    pub fn generate(&self, config: GenerateConfig) -> Result<()> {
+        let temp_dir = crate::utils::temp_dir();
         if temp_dir.exists() {
             std::fs::remove_dir_all(&temp_dir)?;
         }
         std::fs::create_dir_all(&temp_dir)?;
+        if config.output_dir.exists() {
+            std::fs::remove_dir_all(&config.output_dir)?;
+        }
 
         for test_bundle in &self.test_bundles {
+            let output_dir = if config.subdir {
+                config.output_dir.join(&test_bundle.name)
+            } else {
+                config.output_dir.clone()
+            };
+            std::fs::create_dir_all(&output_dir)?;
+
             let names = (0..test_bundle.cases.len())
-                .map(|i| format!("{}-{:02}", &test_bundle.name, i))
+                .map(|i| {
+                    if config.subdir {
+                        format!("{:02}", i)
+                    } else {
+                        format!("{}-{:02}", &test_bundle.name, i)
+                    }
+                })
                 .collect::<Vec<_>>();
 
             let inputs: Vec<_> = names
                 .iter()
-                .map(|name| path.join(format!("{}.in", &name)))
+                .map(|name| output_dir.join(format!("{}.in", &name)))
                 .map(std::fs::File::create)
                 .collect::<std::io::Result<_>>()?;
             test_bundle.generate(&self.programs, inputs)?;
 
             let inputs: Vec<_> = names
                 .iter()
-                .map(|name| path.join(format!("{}.in", &name)))
+                .map(|name| output_dir.join(format!("{}.in", &name)))
                 .map(std::fs::File::open)
                 .collect::<std::io::Result<_>>()?;
             let answers: Vec<_> = names
                 .iter()
-                .map(|name| path.join(format!("{}.ans", &name)))
+                .map(|name| output_dir.join(format!("{}.ans", &name)))
                 .map(std::fs::File::create)
                 .collect::<std::io::Result<_>>()?;
             let solution = self

@@ -1,5 +1,4 @@
 use crate::error::{Error, Result};
-use crate::utils::temp_dir;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -60,7 +59,7 @@ impl Program {
                     .to_str()
                     .unwrap()
                     .to_string();
-                let exe_path = temp_dir().join(exe_name);
+                let exe_path = crate::utils::temp_dir().join(exe_name);
 
                 if !exe_path.exists() {
                     let output = std::process::Command::new("g++")

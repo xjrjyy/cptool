@@ -1,5 +1,5 @@
 use clap::Parser;
-use cptool::problem::Problem;
+use cptool::problem::{GenerateConfig, Problem};
 use std::time::Instant;
 
 #[derive(Debug, Parser)]
@@ -8,7 +8,10 @@ struct Args {
     work_dir: String,
 
     #[arg(short, long, default_value = "data")]
-    output_dir: String,
+    output_dir: std::path::PathBuf,
+
+    #[arg(long, default_value = "false")]
+    subdir: bool,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -22,9 +25,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let problem_yaml = std::fs::read_to_string("problem.yaml")?;
     let problem: Problem = serde_yaml::from_str(&problem_yaml)?;
 
-    let output_dir = std::path::PathBuf::from(args.output_dir);
-    std::fs::create_dir_all(&output_dir)?;
-    problem.generate(output_dir)?;
+    problem.generate(GenerateConfig {
+        output_dir: args.output_dir,
+        subdir: args.subdir,
+    })?;
 
     let elapsed = start.elapsed();
     println!(
