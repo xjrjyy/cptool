@@ -1,4 +1,5 @@
 use clap::Parser;
+use cptool::export::{syzoj, Exporter, OnlineJudge};
 use cptool::problem::{GenerateConfig, Problem};
 use std::time::Instant;
 
@@ -12,6 +13,9 @@ struct Args {
 
     #[arg(long, default_value = "false")]
     subdir: bool,
+
+    #[arg(short, long, value_enum)]
+    export_oj: Option<OnlineJudge>,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -25,10 +29,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let problem_yaml = std::fs::read_to_string("problem.yaml")?;
     let problem: Problem = serde_yaml::from_str(&problem_yaml)?;
 
-    problem.generate(GenerateConfig {
-        output_dir: args.output_dir,
+    let get_case_name = if args.subdir {
+        |_: &str, index: usize| format!("{}", index)
+    } else {
+        |name: &str, index: usize| format!("{}-{}", name, index)
+    };
+    let config = GenerateConfig {
+        output_dir: args.output_dir.clone(),
         subdir: args.subdir,
-    })?;
+        get_case_name: Box::new(get_case_name),
+    };
+    problem.generate(&config)?;
+
+    match args.export_oj {
+        Some(OnlineJudge::Syzoj) => {
+            syzoj::SyzojExporter::export(&problem, &config)?;
+        }
+        None => {}
+    }
 
     let elapsed = start.elapsed();
     println!(

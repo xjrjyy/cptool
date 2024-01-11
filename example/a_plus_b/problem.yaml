@@ -1,5 +1,4 @@
 name: a_plus_b
-export_oj: syzoj
 programs:
   gen:
     info: !cpp

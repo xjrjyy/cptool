@@ -1,9 +1,15 @@
 pub mod syzoj;
 
-use serde::{Deserialize, Serialize};
+use clap::ValueEnum;
 
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, ValueEnum)]
 pub enum OnlineJudge {
-    #[serde(rename = "syzoj")]
     Syzoj,
+}
+
+pub trait Exporter {
+    fn export(
+        problem: &crate::problem::Problem,
+        config: &crate::problem::GenerateConfig,
+    ) -> crate::error::Result<()>;
 }
