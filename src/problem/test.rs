@@ -39,11 +39,20 @@ impl TestBundle {
     }
 }
 
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+pub enum TestTaskType {
+    #[serde(rename = "sum")]
+    Sum,
+    #[serde(rename = "min")]
+    Min,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TestTask {
     pub score: f64,
+    #[serde(rename = "type")]
+    pub task_type: TestTaskType,
     pub bundles: Vec<String>,
-    // TODO: task type
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

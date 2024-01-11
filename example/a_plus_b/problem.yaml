@@ -25,7 +25,12 @@ test:
         - args: [10000000]
         - args: [1000000000]
   tasks:
+    sample:
+      score: 1
+      type: !min
+      bundles: [sample]
     main:
-      score: 100
+      score: 99
+      type: !sum
       bundles: [main]
 solution: std

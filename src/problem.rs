@@ -118,8 +118,7 @@ impl Problem {
                                 })
                                 .collect::<Vec<_>>();
                             Ok(syzoj::Subtask {
-                                // TODO: task type
-                                subtask_type: syzoj::SubtaskType::Min,
+                                subtask_type: task.task_type.into(),
                                 score: task.score,
                                 cases,
                             })

@@ -1,3 +1,4 @@
+use crate::problem::test::TestTaskType;
 use serde::{Deserialize, Serialize};
 
 // https://github.com/syzoj/syzoj/blob/573796fa7670e28d428692f1d91e7ea50ee154e5/utility.js#L192
@@ -10,6 +11,15 @@ pub enum SubtaskType {
     Min,
     #[serde(rename = "mul")]
     Mul,
+}
+
+impl From<TestTaskType> for SubtaskType {
+    fn from(task_type: TestTaskType) -> Self {
+        match task_type {
+            TestTaskType::Sum => SubtaskType::Sum,
+            TestTaskType::Min => SubtaskType::Min,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
