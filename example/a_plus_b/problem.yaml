@@ -16,15 +16,15 @@ test:
     sample:
       cases:
       - generator: gen
-        args: ['20']
+        args: [20]
     main:
       cases:
       - generator: gen
-        args: ['10']
+        args: [10]
       - generator: gen
-        args: ['10000000']
+        args: [10000000]
       - generator: gen
-        args: ['1000000000']
+        args: [1000000000]
   tasks:
     sample:
       score: 1.0
