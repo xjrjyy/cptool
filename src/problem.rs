@@ -80,7 +80,9 @@ impl Problem {
             inputs
                 .into_iter()
                 .zip(answers.into_iter())
-                .map(|(input, answer)| solution.run(vec![], Some(input), answer))
+                .map(|(input, answer)| {
+                    solution.run(&self.solution_name, vec![], Some(input), answer)
+                })
                 .collect::<Result<_>>()?;
         }
 

@@ -47,18 +47,18 @@ pub struct Program {
 impl Program {
     pub fn run(
         &self,
+        name: &str,
         args: Vec<String>,
         input: Option<std::fs::File>,
         output: std::fs::File,
     ) -> Result<()> {
         match &self.info {
             ProgramInfo::Cpp(CppProgram { path, compile_args }) => {
-                let exe_name = std::path::PathBuf::from(path)
-                    .file_stem()
-                    .unwrap()
-                    .to_str()
-                    .unwrap()
-                    .to_string();
+                let exe_name = if cfg!(windows) {
+                    format!("{}.exe", name)
+                } else {
+                    name.to_string()
+                };
                 let exe_path = crate::utils::temp_dir().join(exe_name);
 
                 if !exe_path.exists() {

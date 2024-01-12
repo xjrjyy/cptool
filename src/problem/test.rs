@@ -25,7 +25,7 @@ impl TestCase {
         T: GetProgram,
     {
         let generator = programs.get_program(&self.generator_name)?;
-        generator.run(self.args.clone(), None, input)
+        generator.run(&self.generator_name, self.args.clone(), None, input)
     }
 }
 
