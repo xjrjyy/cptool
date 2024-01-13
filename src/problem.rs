@@ -88,7 +88,7 @@ impl Problem {
 
         for (bundle_name, bundle) in &self.test.bundles {
             self.generate_bundle(config, bundle_name, bundle)
-                .with_context(|| format!("failed to generate bundle `{}`", bundle_name))?;
+                .with_context(|| format!("failed to generate test bundle `{}`", bundle_name))?;
         }
 
         let mut used_bundles = std::collections::HashSet::new();

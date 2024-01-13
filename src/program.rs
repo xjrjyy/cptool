@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -12,7 +12,7 @@ impl std::fmt::Display for CommandProgram {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "{} (extra args: {})",
+            "{} (extra args: `{}`)",
             self.path,
             self.extra_args.join(" ")
         )
@@ -34,7 +34,7 @@ impl std::fmt::Display for CppProgram {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "{} (compile args: {})",
+            "{} (compile args: `{}`)",
             self.path,
             self.compile_args.join(" ")
         )
@@ -65,6 +65,16 @@ pub struct Program {
     memory_limit_mb: f64,
 }
 
+impl std::fmt::Display for Program {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{} (time limit: {}s, memory limit: {}mb)",
+            self.info, self.time_limit_secs, self.memory_limit_mb
+        )
+    }
+}
+
 impl Program {
     fn execute_command(&self, command: &mut std::process::Command) -> Result<()> {
         use process_control::{ChildExt, Control};
@@ -75,9 +85,9 @@ impl Program {
             .memory_limit((self.memory_limit_mb * 1024.0 * 1024.0) as usize)
             .terminate_for_timeout()
             .wait()?
-            .ok_or_else(|| anyhow::anyhow!("{} time limit exceeded", &self.info))?;
+            .ok_or_else(|| anyhow::anyhow!("time limit exceeded: {}", &self))?;
         if !output.status.success() {
-            return Err(anyhow::anyhow!("{} runtime error", &self.info));
+            return Err(anyhow::anyhow!("runtime error: {}", &self));
         }
         Ok(())
     }
@@ -95,7 +105,7 @@ impl Program {
                 if let Some(input) = input {
                     command.stdin(input);
                 }
-                command.args(extra_args).args(args).stdout(output);
+                command.args(extra_args).args(args.clone()).stdout(output);
 
                 self.execute_command(&mut command)
             }
@@ -115,7 +125,7 @@ impl Program {
                         .arg(path)
                         .output()?;
                     if !output.status.success() {
-                        return Err(anyhow::anyhow!("{} compile error", &self.info));
+                        return Err(anyhow::anyhow!("compile error: {}", &self.info));
                     }
                 }
 
@@ -123,10 +133,17 @@ impl Program {
                 if let Some(input) = input {
                     command.stdin(input);
                 }
-                command.args(args).stdout(output);
+                command.args(args.clone()).stdout(output);
 
                 self.execute_command(&mut command)
             }
         }
+        .with_context(|| {
+            format!(
+                "failed to run program `{}` (args: `{}`)",
+                name,
+                args.join(" ")
+            )
+        })
     }
 }

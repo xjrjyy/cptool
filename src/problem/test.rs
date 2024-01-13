@@ -19,6 +19,17 @@ pub struct TestCase {
     pub args: Vec<String>,
 }
 
+impl std::fmt::Display for TestCase {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{} (args: `{}`)",
+            self.generator_name,
+            self.args.join(" ")
+        )
+    }
+}
+
 impl TestCase {
     pub fn generate<T>(&self, programs: &T, input: std::fs::File) -> Result<()>
     where
@@ -32,19 +43,6 @@ impl TestCase {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TestBundle {
     pub cases: Vec<TestCase>,
-}
-
-impl TestBundle {
-    pub fn generate<T>(&self, programs: &T, inputs: Vec<std::fs::File>) -> Result<()>
-    where
-        T: GetProgram,
-    {
-        self.cases
-            .iter()
-            .zip(inputs.into_iter())
-            .map(|(case, input)| case.generate(programs, input))
-            .collect::<Result<_>>()
-    }
 }
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
