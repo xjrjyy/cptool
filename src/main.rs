@@ -5,7 +5,7 @@ use std::time::Instant;
 
 #[derive(Debug, Parser)]
 struct Args {
-    #[arg(short, long)]
+    #[arg(short, long, default_value = ".")]
     work_dir: String,
 
     #[arg(short, long, default_value = "data")]
