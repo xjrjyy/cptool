@@ -47,16 +47,16 @@ impl Problem {
             std::fs::remove_dir_all(&config.output_dir)?;
         }
 
-        for (name, test_bundle) in &self.test.bundles {
+        for (bundle_name, bundle) in &self.test.bundles {
             let output_dir = if config.subdir {
-                config.output_dir.join(&name)
+                config.output_dir.join(&bundle_name)
             } else {
                 config.output_dir.clone()
             };
             std::fs::create_dir_all(&output_dir)?;
 
-            let cases: Vec<_> = (0..test_bundle.cases.len())
-                .map(|index| (*config.get_case_name)(name, index))
+            let cases: Vec<_> = (0..bundle.cases.len())
+                .map(|index| (*config.get_case_name)(bundle_name, index))
                 .collect();
 
             let inputs: Vec<_> = cases
@@ -64,7 +64,7 @@ impl Problem {
                 .map(|name| output_dir.join(format!("{}.in", &name)))
                 .map(std::fs::File::create)
                 .collect::<std::io::Result<_>>()?;
-            test_bundle.generate(self, inputs)?;
+            bundle.generate(self, inputs)?;
 
             let inputs: Vec<_> = cases
                 .iter()

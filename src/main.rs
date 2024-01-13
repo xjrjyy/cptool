@@ -6,9 +6,9 @@ use std::time::Instant;
 #[derive(Debug, Parser)]
 struct Args {
     #[arg(short, long, default_value = ".")]
-    work_dir: String,
+    work_dir: std::path::PathBuf,
 
-    #[arg(short, long, default_value = "data")]
+    #[arg(short, long, default_value = "./data")]
     output_dir: std::path::PathBuf,
 
     #[arg(long, default_value = "false")]
@@ -23,8 +23,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let start = Instant::now();
 
-    let work_dir = std::path::PathBuf::from(args.work_dir);
-    std::env::set_current_dir(&work_dir)?;
+    std::env::set_current_dir(&args.work_dir)?;
 
     let problem_yaml = std::fs::read_to_string("problem.yaml")?;
     let problem: Problem = serde_yaml::from_str(&problem_yaml)?;
