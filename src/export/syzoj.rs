@@ -61,17 +61,18 @@ impl Exporter for SyzojExporter {
             .test
             .tasks
             .iter()
-            .map(|(name, task)| {
-                let bundles = task
+            .map(|(_, task)| {
+                let cases = task
                     .bundles
                     .iter()
-                    .map(|name| problem.get_test_bundle(name))
-                    .collect::<Result<Vec<_>>>()?;
-                let cases = bundles
-                    .iter()
-                    .flat_map(|bundle| {
-                        (0..bundle.cases.len()).map(|index| (*config.get_case_name)(name, index))
+                    .map(|bundle_name| {
+                        let bundle = problem.get_test_bundle(bundle_name)?;
+                        Ok((0..bundle.cases.len())
+                            .map(|index| (*config.get_case_name)(bundle_name, index)))
                     })
+                    .collect::<Result<Vec<_>>>()?
+                    .into_iter()
+                    .flatten()
                     .collect::<Vec<_>>();
                 Ok(Subtask {
                     subtask_type: task.task_type.into(),

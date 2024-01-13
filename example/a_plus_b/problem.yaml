@@ -33,5 +33,5 @@ test:
     main:
       score: 99.0
       type: sum
-      bundles: [main]
+      bundles: [sample, main]
 solution: std
