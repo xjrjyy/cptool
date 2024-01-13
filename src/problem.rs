@@ -86,7 +86,18 @@ impl Problem {
                 .collect::<Result<_>>()?;
         }
 
-        // TOOD: unused bundles
+        let mut used_bundles = std::collections::HashSet::new();
+        for (_, task) in &self.test.tasks {
+            for bundle_name in task.bundles.iter() {
+                self.get_test_bundle(bundle_name)?;
+                used_bundles.insert(bundle_name);
+            }
+        }
+        for (bundle_name, _) in &self.test.bundles {
+            if !used_bundles.contains(bundle_name) {
+                println!("warning: unused test bundle: {}", bundle_name);
+            }
+        }
 
         Ok(())
     }
