@@ -52,32 +52,25 @@ impl Problem {
         };
         std::fs::create_dir_all(&output_dir)?;
 
-        let cases: Vec<_> = (0..bundle.cases.len())
-            .map(|index| (*config.get_case_name)(bundle_name, index))
-            .collect();
-
-        let inputs: Vec<_> = cases
-            .iter()
-            .map(|name| output_dir.join(format!("{}.in", &name)))
-            .map(std::fs::File::create)
-            .collect::<std::io::Result<_>>()?;
-        bundle.generate(self, inputs)?;
-
-        let inputs: Vec<_> = cases
-            .iter()
-            .map(|name| output_dir.join(format!("{}.in", &name)))
-            .map(std::fs::File::open)
-            .collect::<std::io::Result<_>>()?;
-        let answers: Vec<_> = cases
-            .iter()
-            .map(|name| output_dir.join(format!("{}.ans", &name)))
-            .map(std::fs::File::create)
-            .collect::<std::io::Result<_>>()?;
         let solution = self.get_program(&self.solution_name)?;
-        inputs
-            .into_iter()
-            .zip(answers.into_iter())
-            .map(|(input, answer)| solution.run(&self.solution_name, vec![], Some(input), answer))
+        bundle
+            .cases
+            .iter()
+            .enumerate()
+            .map(|(index, case)| {
+                let name = (*config.get_case_name)(bundle_name, index);
+
+                let input_path = output_dir.join(format!("{}.in", &name));
+                let input = std::fs::File::create(&input_path)?;
+                case.generate(self, input)?;
+
+                let input = std::fs::File::open(&input_path)?;
+                let answer_path = output_dir.join(format!("{}.ans", &name));
+                let answer = std::fs::File::create(&answer_path)?;
+                solution.run(&self.solution_name, vec![], Some(input), answer)?;
+
+                Ok(())
+            })
             .collect::<Result<_>>()?;
 
         Ok(())
