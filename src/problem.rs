@@ -1,7 +1,7 @@
 pub mod test;
 
 use crate::program::Program;
-use anyhow::Result;
+use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use test::{GetProgram, GetTestBundle, Test, TestBundle};
@@ -39,6 +39,50 @@ pub struct GenerateConfig {
 }
 
 impl Problem {
+    fn generate_bundle(
+        &self,
+        config: &GenerateConfig,
+        bundle_name: &str,
+        bundle: &TestBundle,
+    ) -> Result<()> {
+        let output_dir = if config.subdir {
+            config.output_dir.join(&bundle_name)
+        } else {
+            config.output_dir.clone()
+        };
+        std::fs::create_dir_all(&output_dir)?;
+
+        let cases: Vec<_> = (0..bundle.cases.len())
+            .map(|index| (*config.get_case_name)(bundle_name, index))
+            .collect();
+
+        let inputs: Vec<_> = cases
+            .iter()
+            .map(|name| output_dir.join(format!("{}.in", &name)))
+            .map(std::fs::File::create)
+            .collect::<std::io::Result<_>>()?;
+        bundle.generate(self, inputs)?;
+
+        let inputs: Vec<_> = cases
+            .iter()
+            .map(|name| output_dir.join(format!("{}.in", &name)))
+            .map(std::fs::File::open)
+            .collect::<std::io::Result<_>>()?;
+        let answers: Vec<_> = cases
+            .iter()
+            .map(|name| output_dir.join(format!("{}.ans", &name)))
+            .map(std::fs::File::create)
+            .collect::<std::io::Result<_>>()?;
+        let solution = self.get_program(&self.solution_name)?;
+        inputs
+            .into_iter()
+            .zip(answers.into_iter())
+            .map(|(input, answer)| solution.run(&self.solution_name, vec![], Some(input), answer))
+            .collect::<Result<_>>()?;
+
+        Ok(())
+    }
+
     pub fn generate(&self, config: &GenerateConfig) -> Result<()> {
         let temp_dir = crate::utils::temp_dir();
         if temp_dir.exists() {
@@ -50,42 +94,8 @@ impl Problem {
         }
 
         for (bundle_name, bundle) in &self.test.bundles {
-            let output_dir = if config.subdir {
-                config.output_dir.join(&bundle_name)
-            } else {
-                config.output_dir.clone()
-            };
-            std::fs::create_dir_all(&output_dir)?;
-
-            let cases: Vec<_> = (0..bundle.cases.len())
-                .map(|index| (*config.get_case_name)(bundle_name, index))
-                .collect();
-
-            let inputs: Vec<_> = cases
-                .iter()
-                .map(|name| output_dir.join(format!("{}.in", &name)))
-                .map(std::fs::File::create)
-                .collect::<std::io::Result<_>>()?;
-            bundle.generate(self, inputs)?;
-
-            let inputs: Vec<_> = cases
-                .iter()
-                .map(|name| output_dir.join(format!("{}.in", &name)))
-                .map(std::fs::File::open)
-                .collect::<std::io::Result<_>>()?;
-            let answers: Vec<_> = cases
-                .iter()
-                .map(|name| output_dir.join(format!("{}.ans", &name)))
-                .map(std::fs::File::create)
-                .collect::<std::io::Result<_>>()?;
-            let solution = self.get_program(&self.solution_name)?;
-            inputs
-                .into_iter()
-                .zip(answers.into_iter())
-                .map(|(input, answer)| {
-                    solution.run(&self.solution_name, vec![], Some(input), answer)
-                })
-                .collect::<Result<_>>()?;
+            self.generate_bundle(config, bundle_name, bundle)
+                .with_context(|| format!("failed to generate bundle `{}`", bundle_name))?;
         }
 
         let mut used_bundles = std::collections::HashSet::new();
