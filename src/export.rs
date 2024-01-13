@@ -1,4 +1,5 @@
 pub mod syzoj;
+use anyhow::Result;
 
 use clap::ValueEnum;
 
@@ -11,5 +12,5 @@ pub trait Exporter {
     fn export(
         problem: &crate::problem::Problem,
         config: &crate::problem::GenerateConfig,
-    ) -> crate::error::Result<()>;
+    ) -> Result<()>;
 }

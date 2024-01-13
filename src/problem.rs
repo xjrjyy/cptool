@@ -1,7 +1,7 @@
 pub mod test;
 
-use crate::error::{Error, Result};
 use crate::program::Program;
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use test::{GetProgram, GetTestBundle, Test, TestBundle};
@@ -17,7 +17,9 @@ pub struct Problem {
 
 impl GetProgram for Problem {
     fn get_program(&self, name: &str) -> Result<&Program> {
-        self.programs.get(name).ok_or(Error::file_not_found(name))
+        self.programs
+            .get(name)
+            .ok_or(anyhow::anyhow!("program `{}` not found", name))
     }
 }
 
@@ -26,7 +28,7 @@ impl GetTestBundle for Problem {
         self.test
             .bundles
             .get(name)
-            .ok_or(Error::test_bundle_not_found(name))
+            .ok_or(anyhow::anyhow!("test bundle `{}` not found", name))
     }
 }
 
@@ -95,7 +97,7 @@ impl Problem {
         }
         for (bundle_name, _) in &self.test.bundles {
             if !used_bundles.contains(bundle_name) {
-                println!("warning: unused test bundle: {}", bundle_name);
+                println!("warning: unused test bundle `{}`", bundle_name);
             }
         }
 

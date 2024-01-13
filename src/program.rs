@@ -1,4 +1,4 @@
-use crate::error::{Error, Result};
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -75,9 +75,9 @@ impl Program {
             .memory_limit((self.memory_limit_mb * 1024.0 * 1024.0) as usize)
             .terminate_for_timeout()
             .wait()?
-            .ok_or_else(|| Error::time_limit_exceeded(&self.info))?;
+            .ok_or_else(|| anyhow::anyhow!("{} time limit exceeded", &self.info))?;
         if !output.status.success() {
-            return Err(Error::runtime_error(&self.info));
+            return Err(anyhow::anyhow!("{} runtime error", &self.info));
         }
         Ok(())
     }
@@ -115,10 +115,7 @@ impl Program {
                         .arg(path)
                         .output()?;
                     if !output.status.success() {
-                        return Err(Error::compile_error(
-                            &self.info,
-                            String::from_utf8(output.stderr).unwrap(),
-                        ));
+                        return Err(anyhow::anyhow!("{} compile error", &self.info));
                     }
                 }
 

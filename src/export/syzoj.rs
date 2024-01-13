@@ -1,6 +1,6 @@
 use super::Exporter;
-use crate::error::{Error, Result};
 use crate::problem::test::{GetTestBundle, TestTaskType};
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
 // https://github.com/syzoj/syzoj/blob/573796fa7670e28d428692f1d91e7ea50ee154e5/utility.js#L192
@@ -53,9 +53,7 @@ impl Exporter for SyzojExporter {
         config: &crate::problem::GenerateConfig,
     ) -> Result<()> {
         if config.subdir {
-            return Err(Error::export_error(
-                "subdir is not supported by syzoj exporter",
-            ));
+            return Err(anyhow::anyhow!("subdir is not supported by syzoj exporter"));
         }
         let subtasks = problem
             .test
