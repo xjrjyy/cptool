@@ -1,6 +1,16 @@
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
+pub trait Execute {
+    fn execute(
+        &self,
+        name: &str,
+        args: Vec<String>,
+        input: Option<std::fs::File>,
+        output: std::fs::File,
+    ) -> Result<()>;
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CommandProgram {
     pub path: String,
@@ -91,8 +101,10 @@ impl Program {
         }
         Ok(())
     }
+}
 
-    pub fn run(
+impl Execute for Program {
+    fn execute(
         &self,
         name: &str,
         args: Vec<String>,

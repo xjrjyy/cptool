@@ -1,10 +1,10 @@
-use crate::program::Program;
+use crate::program::Execute;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 pub trait GetProgram {
-    fn get_program(&self, name: &str) -> Result<&Program>;
+    fn get_program(&self, name: &str) -> Result<&dyn Execute>;
 }
 
 pub trait GetTestBundle {
@@ -13,7 +13,6 @@ pub trait GetTestBundle {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TestCase {
-    // TODO: raw input
     #[serde(rename = "generator")]
     pub generator_name: String,
     pub args: Vec<String>,
@@ -36,7 +35,7 @@ impl TestCase {
         T: GetProgram,
     {
         let generator = programs.get_program(&self.generator_name)?;
-        generator.run(&self.generator_name, self.args.clone(), None, input)
+        generator.execute(&self.generator_name, self.args.clone(), None, input)
     }
 }
 

@@ -1,6 +1,7 @@
+mod builtin_problem;
 pub mod test;
 
-use crate::program::Program;
+use crate::program::{Execute, Program};
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -16,10 +17,19 @@ pub struct Problem {
 }
 
 impl GetProgram for Problem {
-    fn get_program(&self, name: &str) -> Result<&Program> {
-        self.programs
-            .get(name)
-            .ok_or(anyhow::anyhow!("program `{}` not found", name))
+    fn get_program(&self, name: &str) -> Result<&dyn Execute> {
+        if name.starts_with("$") {
+            use builtin_problem::FromFile;
+            match name {
+                "$file" => Ok(&FromFile as &dyn Execute),
+                _ => Err(anyhow::anyhow!("builtin program `{}` not found", name)),
+            }
+        } else {
+            self.programs
+                .get(name)
+                .map(|program| program as &dyn Execute)
+                .ok_or(anyhow::anyhow!("program `{}` not found", name))
+        }
     }
 }
 
@@ -67,7 +77,7 @@ impl Problem {
                 let input = std::fs::File::open(&input_path)?;
                 let answer_path = output_dir.join(format!("{}.ans", &name));
                 let answer = std::fs::File::create(&answer_path)?;
-                solution.run(&self.solution_name, vec![], Some(input), answer)?;
+                solution.execute(&self.solution_name, vec![], Some(input), answer)?;
 
                 Ok(())
             })
