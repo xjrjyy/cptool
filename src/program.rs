@@ -137,7 +137,11 @@ impl Execute for Program {
                         .arg(path)
                         .output()?;
                     if !output.status.success() {
-                        return Err(anyhow::anyhow!("compile error: {}", &self.info));
+                        return Err(anyhow::anyhow!(
+                            "compile error: {}\n{}",
+                            &self.info,
+                            String::from_utf8_lossy(&output.stderr)
+                        ));
                     }
                 }
 
