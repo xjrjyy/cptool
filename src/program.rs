@@ -7,7 +7,7 @@ pub trait Execute {
         name: &str,
         args: Vec<String>,
         input: Option<std::fs::File>,
-        output: std::fs::File,
+        output: Option<std::fs::File>,
     ) -> Result<()>;
 }
 
@@ -109,7 +109,7 @@ impl Execute for Program {
         name: &str,
         args: Vec<String>,
         input: Option<std::fs::File>,
-        output: std::fs::File,
+        output: Option<std::fs::File>,
     ) -> Result<()> {
         match &self.info {
             ProgramInfo::Command(CommandProgram { path, extra_args }) => {
@@ -117,7 +117,10 @@ impl Execute for Program {
                 if let Some(input) = input {
                     command.stdin(input);
                 }
-                command.args(extra_args).args(args.clone()).stdout(output);
+                if let Some(output) = output {
+                    command.stdout(output);
+                }
+                command.args(extra_args).args(args.clone());
 
                 self.execute_command(&mut command)
             }
@@ -149,7 +152,10 @@ impl Execute for Program {
                 if let Some(input) = input {
                     command.stdin(input);
                 }
-                command.args(args.clone()).stdout(output);
+                if let Some(output) = output {
+                    command.stdout(output);
+                }
+                command.args(args.clone());
 
                 self.execute_command(&mut command)
             }

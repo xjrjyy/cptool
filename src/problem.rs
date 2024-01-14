@@ -12,6 +12,8 @@ pub struct Problem {
     pub name: String,
     pub programs: HashMap<String, Program>,
     pub test: Test,
+    #[serde(rename = "validator")]
+    pub validator_name: Option<String>,
     #[serde(rename = "solution")]
     pub solution_name: String,
 }
@@ -72,12 +74,27 @@ impl Problem {
 
                 let input_path = output_dir.join(format!("{}.in", &name));
                 let input = std::fs::File::create(&input_path)?;
-                case.generate(self, input)?;
+                case.generate(self, Some(input))
+                    .with_context(|| format!("failed to generate `{}` #{}", bundle_name, index))?;
+
+                if let Some(validator_name) = &self.validator_name {
+                    let validator = self.get_program(validator_name)?;
+                    let input = std::fs::File::open(&input_path)?;
+                    validator
+                        .execute(&validator_name, vec![], Some(input), None)
+                        .with_context(|| {
+                            format!("failed to validate `{}` #{}", bundle_name, index)
+                        })?;
+                }
 
                 let input = std::fs::File::open(&input_path)?;
                 let answer_path = output_dir.join(format!("{}.ans", &name));
                 let answer = std::fs::File::create(&answer_path)?;
-                solution.execute(&self.solution_name, vec![], Some(input), answer)?;
+                solution
+                    .execute(&self.solution_name, vec![], Some(input), Some(answer))
+                    .with_context(|| {
+                        format!("failed to generate answer for `{}` #{}", bundle_name, index)
+                    })?;
 
                 Ok(())
             })

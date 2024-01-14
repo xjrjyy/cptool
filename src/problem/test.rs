@@ -30,7 +30,7 @@ impl std::fmt::Display for TestCase {
 }
 
 impl TestCase {
-    pub fn generate<T>(&self, programs: &T, input: std::fs::File) -> Result<()>
+    pub fn generate<T>(&self, programs: &T, input: Option<std::fs::File>) -> Result<()>
     where
         T: GetProgram,
     {

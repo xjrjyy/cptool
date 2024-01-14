@@ -58,5 +58,6 @@ test:
       score: 99.0
       type: sum
       bundles: [sample, main]
+validator: val # optional
 solution: std
 ```

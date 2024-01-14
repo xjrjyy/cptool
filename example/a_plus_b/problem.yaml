@@ -11,6 +11,11 @@ programs:
       compile_args: [-O2, -std=c++14]
     time_limit_secs: 1.0
     memory_limit_mb: 512.0
+  val:
+    info: !cpp
+      path: ./val.cpp
+    time_limit_secs: 1.0
+    memory_limit_mb: 512.0
 test:
   bundles:
     sample:
@@ -36,4 +41,5 @@ test:
       score: 99.0
       type: sum
       bundles: [sample, main]
+validator: val
 solution: std
