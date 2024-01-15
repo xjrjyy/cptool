@@ -131,6 +131,11 @@ impl Problem {
             }
         }
 
+        println!(
+            "total score: {:.2}",
+            self.test.tasks.values().map(|task| task.score).sum::<f64>()
+        );
+
         Ok(())
     }
 }
