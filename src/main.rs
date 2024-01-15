@@ -4,6 +4,7 @@ use cptool::problem::{GenerateConfig, Problem};
 use std::time::Instant;
 
 #[derive(Debug, Parser)]
+#[command(version)]
 struct Args {
     #[arg(short, long, default_value = ".")]
     work_dir: std::path::PathBuf,
