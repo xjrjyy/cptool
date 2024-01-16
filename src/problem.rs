@@ -16,6 +16,8 @@ pub struct Problem {
     pub validator_name: Option<String>,
     #[serde(rename = "solution")]
     pub solution_name: String,
+    #[serde(rename = "checker")]
+    pub checker_name: String,
 }
 
 impl GetProgram for Problem {
@@ -95,6 +97,21 @@ impl Problem {
                     .with_context(|| {
                         format!("failed to generate answer for `{}` #{}", bundle_name, index)
                     })?;
+
+                let checker = self.get_program(&self.checker_name)?;
+                // TODO: partial points
+                checker
+                    .execute(
+                        &self.checker_name,
+                        vec![
+                            input_path.display().to_string(),
+                            answer_path.display().to_string(),
+                            answer_path.display().to_string(),
+                        ],
+                        None,
+                        None,
+                    )
+                    .with_context(|| format!("failed to check `{}` #{}", bundle_name, index))?;
 
                 Ok(())
             })
