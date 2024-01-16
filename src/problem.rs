@@ -54,7 +54,6 @@ impl Problem {
         }
         std::fs::create_dir_all(&temp_dir)?;
 
-        let checker = self.get_program(&self.checker_name)?;
         self.test
             .bundles
             .iter()
@@ -72,23 +71,8 @@ impl Problem {
                     .cases
                     .iter()
                     .map(|case| {
-                        // TODO: partial points
-                        let input_path = output_dir.join(&case.input_file()?);
                         let answer_path = output_dir.join(&case.answer_file()?);
-                        checker
-                            .execute(
-                                &self.checker_name,
-                                vec![
-                                    input_path.display().to_string(),
-                                    answer_path.display().to_string(),
-                                    answer_path.display().to_string(),
-                                ],
-                                None,
-                                None,
-                            )
-                            .with_context(|| {
-                                format!("failed to check `{}`", case.name.as_ref().unwrap())
-                            })
+                        case.check(output_dir, self, &self.checker_name, &answer_path)
                     })
                     .collect::<Result<_>>()?;
 

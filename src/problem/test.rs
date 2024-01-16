@@ -93,6 +93,34 @@ impl TestCase {
 
         Ok(())
     }
+
+    pub fn check<T>(
+        &self,
+        output_dir: &std::path::PathBuf,
+        programs: &T,
+        checker_name: &str,
+        output_path: &std::path::PathBuf,
+    ) -> Result<()>
+    where
+        T: GetProgram,
+    {
+        let input_path = output_dir.join(self.input_file()?);
+        let answer_path = output_dir.join(self.answer_file()?);
+        let checker = programs.get_program(checker_name)?;
+        // TODO: partial points
+        checker
+            .execute(
+                &checker_name,
+                vec![
+                    input_path.display().to_string(),
+                    output_path.display().to_string(),
+                    answer_path.display().to_string(),
+                ],
+                None,
+                None,
+            )
+            .with_context(|| format!("failed to check `{}`", self.name.as_ref().unwrap()))
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
