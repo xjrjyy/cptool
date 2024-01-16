@@ -33,6 +33,8 @@ programs:
       compile_args: [-O2, -std=c++14] # compile arguments, default to [-O2]
     time_limit_secs: 1.0
     memory_limit_mb: 512.0
+validator: val # optional
+solution: std
 test:
   bundles: # data bundles
     sample: # bundle name
@@ -58,6 +60,4 @@ test:
       score: 99.0
       type: sum
       bundles: [sample, main]
-validator: val # optional
-solution: std
 ```
