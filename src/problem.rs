@@ -47,63 +47,6 @@ impl GetTestBundle for Problem {
 }
 
 impl Problem {
-    fn generate_bundle(
-        &self,
-        output_dir: &std::path::PathBuf,
-        bundle_name: &str,
-        bundle: &TestBundle,
-    ) -> Result<()> {
-        let solution = self.get_program(&self.solution_name)?;
-        bundle
-            .cases
-            .iter()
-            .enumerate()
-            .map(|(index, case)| {
-                let input_path = output_dir.join(case.input_file()?);
-                case.generate(output_dir, self)
-                    .with_context(|| format!("failed to generate `{}` #{}", bundle_name, index))?;
-
-                if let Some(validator_name) = &self.validator_name {
-                    let validator = self.get_program(validator_name)?;
-                    let input = std::fs::File::open(&input_path)?;
-                    validator
-                        .execute(&validator_name, vec![], Some(input), None)
-                        .with_context(|| {
-                            format!("failed to validate `{}` #{}", bundle_name, index)
-                        })?;
-                }
-
-                let input = std::fs::File::open(&input_path)?;
-                let answer_path = output_dir.join(case.answer_file()?);
-                let answer = std::fs::File::create(&answer_path)?;
-                solution
-                    .execute(&self.solution_name, vec![], Some(input), Some(answer))
-                    .with_context(|| {
-                        format!("failed to generate answer for `{}` #{}", bundle_name, index)
-                    })?;
-
-                let checker = self.get_program(&self.checker_name)?;
-                // TODO: partial points
-                checker
-                    .execute(
-                        &self.checker_name,
-                        vec![
-                            input_path.display().to_string(),
-                            answer_path.display().to_string(),
-                            answer_path.display().to_string(),
-                        ],
-                        None,
-                        None,
-                    )
-                    .with_context(|| format!("failed to check `{}` #{}", bundle_name, index))?;
-
-                Ok(())
-            })
-            .collect::<Result<_>>()?;
-
-        Ok(())
-    }
-
     pub fn generate(&self, output_dir: &std::path::PathBuf) -> Result<()> {
         let temp_dir = crate::utils::temp_dir();
         if temp_dir.exists() {
@@ -111,12 +54,45 @@ impl Problem {
         }
         std::fs::create_dir_all(&temp_dir)?;
 
+        let checker = self.get_program(&self.checker_name)?;
         self.test
             .bundles
             .iter()
             .map(|(bundle_name, bundle)| {
-                self.generate_bundle(output_dir, bundle_name, bundle)
-                    .with_context(|| format!("failed to generate test bundle `{}`", bundle_name))
+                bundle
+                    .generate(
+                        output_dir,
+                        self,
+                        &self.solution_name,
+                        self.validator_name.as_deref(),
+                    )
+                    .with_context(|| format!("failed to generate test bundle `{}`", bundle_name))?;
+
+                bundle
+                    .cases
+                    .iter()
+                    .map(|case| {
+                        // TODO: partial points
+                        let input_path = output_dir.join(&case.input_file()?);
+                        let answer_path = output_dir.join(&case.answer_file()?);
+                        checker
+                            .execute(
+                                &self.checker_name,
+                                vec![
+                                    input_path.display().to_string(),
+                                    answer_path.display().to_string(),
+                                    answer_path.display().to_string(),
+                                ],
+                                None,
+                                None,
+                            )
+                            .with_context(|| {
+                                format!("failed to check `{}`", case.name.as_ref().unwrap())
+                            })
+                    })
+                    .collect::<Result<_>>()?;
+
+                Ok(())
             })
             .collect::<Result<_>>()?;
 
