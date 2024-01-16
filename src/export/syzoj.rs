@@ -48,13 +48,7 @@ pub struct Problem {
 pub struct SyzojExporter;
 
 impl Exporter for SyzojExporter {
-    fn export(
-        problem: &crate::problem::Problem,
-        config: &crate::problem::GenerateConfig,
-    ) -> Result<()> {
-        if config.subdir {
-            return Err(anyhow::anyhow!("subdir is not supported by syzoj exporter"));
-        }
+    fn export(problem: &crate::problem::Problem, output_dir: &std::path::PathBuf) -> Result<()> {
         let subtasks = problem
             .test
             .tasks
@@ -65,8 +59,18 @@ impl Exporter for SyzojExporter {
                     .iter()
                     .map(|bundle_name| {
                         let bundle = problem.get_test_bundle(bundle_name)?;
-                        Ok((0..bundle.cases.len())
-                            .map(|index| (*config.get_case_name)(bundle_name, index)))
+                        Ok(bundle
+                            .cases
+                            .iter()
+                            .map(|case| {
+                                case.name.clone().ok_or_else(|| {
+                                    anyhow::anyhow!(
+                                        "test case name not found for `{}`",
+                                        case.generator_name
+                                    )
+                                })
+                            })
+                            .collect::<Result<Vec<_>>>()?)
                     })
                     .collect::<Result<Vec<_>>>()?
                     .into_iter()
@@ -88,7 +92,7 @@ impl Exporter for SyzojExporter {
         };
 
         let yaml = serde_yaml::to_string(&problem)?;
-        std::fs::write(config.output_dir.join("data.yml"), yaml)?;
+        std::fs::write(output_dir.join("data.yml"), yaml)?;
 
         Ok(())
     }

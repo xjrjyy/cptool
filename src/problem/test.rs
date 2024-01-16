@@ -16,6 +16,8 @@ pub struct TestCase {
     #[serde(rename = "generator")]
     pub generator_name: String,
     pub args: Vec<String>,
+    #[serde(skip)]
+    pub name: Option<String>,
 }
 
 impl std::fmt::Display for TestCase {
@@ -30,12 +32,35 @@ impl std::fmt::Display for TestCase {
 }
 
 impl TestCase {
-    pub fn generate<T>(&self, programs: &T, input: Option<std::fs::File>) -> Result<()>
+    pub fn input_file(&self) -> Result<String> {
+        Ok(format!(
+            "{}.in",
+            self.name.as_ref().ok_or_else(|| {
+                anyhow::anyhow!("test case name not found for `{}`", self.generator_name)
+            })?
+        ))
+    }
+
+    pub fn answer_file(&self) -> Result<String> {
+        Ok(format!(
+            "{}.ans",
+            self.name.as_ref().ok_or_else(|| {
+                anyhow::anyhow!("test case name not found for `{}`", self.generator_name)
+            })?
+        ))
+    }
+
+    pub fn generate<T>(&self, output_dir: &std::path::PathBuf, programs: &T) -> Result<()>
     where
         T: GetProgram,
     {
+        let input_path = output_dir.join(self.input_file()?);
+        if input_path.exists() {
+            std::fs::remove_file(&input_path)?;
+        }
+        let input = std::fs::File::create(input_path)?;
         let generator = programs.get_program(&self.generator_name)?;
-        generator.execute(&self.generator_name, self.args.clone(), None, input)
+        generator.execute(&self.generator_name, self.args.clone(), None, Some(input))
     }
 }
 

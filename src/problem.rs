@@ -46,37 +46,21 @@ impl GetTestBundle for Problem {
     }
 }
 
-pub struct GenerateConfig {
-    pub output_dir: std::path::PathBuf,
-    pub subdir: bool,
-    pub get_case_name: Box<dyn Fn(&str, usize) -> String>,
-}
-
 impl Problem {
     fn generate_bundle(
         &self,
-        config: &GenerateConfig,
+        output_dir: &std::path::PathBuf,
         bundle_name: &str,
         bundle: &TestBundle,
     ) -> Result<()> {
-        let output_dir = if config.subdir {
-            config.output_dir.join(&bundle_name)
-        } else {
-            config.output_dir.clone()
-        };
-        std::fs::create_dir_all(&output_dir)?;
-
         let solution = self.get_program(&self.solution_name)?;
         bundle
             .cases
             .iter()
             .enumerate()
             .map(|(index, case)| {
-                let name = (*config.get_case_name)(bundle_name, index);
-
-                let input_path = output_dir.join(format!("{}.in", &name));
-                let input = std::fs::File::create(&input_path)?;
-                case.generate(self, Some(input))
+                let input_path = output_dir.join(case.input_file()?);
+                case.generate(output_dir, self)
                     .with_context(|| format!("failed to generate `{}` #{}", bundle_name, index))?;
 
                 if let Some(validator_name) = &self.validator_name {
@@ -90,7 +74,7 @@ impl Problem {
                 }
 
                 let input = std::fs::File::open(&input_path)?;
-                let answer_path = output_dir.join(format!("{}.ans", &name));
+                let answer_path = output_dir.join(case.answer_file()?);
                 let answer = std::fs::File::create(&answer_path)?;
                 solution
                     .execute(&self.solution_name, vec![], Some(input), Some(answer))
@@ -120,20 +104,21 @@ impl Problem {
         Ok(())
     }
 
-    pub fn generate(&self, config: &GenerateConfig) -> Result<()> {
+    pub fn generate(&self, output_dir: &std::path::PathBuf) -> Result<()> {
         let temp_dir = crate::utils::temp_dir();
         if temp_dir.exists() {
             std::fs::remove_dir_all(&temp_dir)?;
         }
         std::fs::create_dir_all(&temp_dir)?;
-        if config.output_dir.exists() {
-            std::fs::remove_dir_all(&config.output_dir)?;
-        }
 
-        for (bundle_name, bundle) in &self.test.bundles {
-            self.generate_bundle(config, bundle_name, bundle)
-                .with_context(|| format!("failed to generate test bundle `{}`", bundle_name))?;
-        }
+        self.test
+            .bundles
+            .iter()
+            .map(|(bundle_name, bundle)| {
+                self.generate_bundle(output_dir, bundle_name, bundle)
+                    .with_context(|| format!("failed to generate test bundle `{}`", bundle_name))
+            })
+            .collect::<Result<_>>()?;
 
         let mut used_bundles = std::collections::HashSet::new();
         for (_, task) in &self.test.tasks {

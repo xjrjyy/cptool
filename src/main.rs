@@ -1,6 +1,6 @@
 use clap::Parser;
 use cptool::export::{syzoj, Exporter, OnlineJudge};
-use cptool::problem::{GenerateConfig, Problem};
+use cptool::problem::Problem;
 use std::time::Instant;
 
 #[derive(Debug, Parser)]
@@ -11,9 +11,6 @@ struct Args {
 
     #[arg(short, long, default_value = "./data")]
     output_dir: std::path::PathBuf,
-
-    #[arg(long, default_value = "false")]
-    subdir: bool,
 
     #[arg(short, long, value_enum)]
     export_oj: Option<OnlineJudge>,
@@ -27,23 +24,31 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     std::env::set_current_dir(&args.work_dir)?;
 
     let problem_yaml = std::fs::read_to_string("problem.yaml")?;
-    let problem: Problem = serde_yaml::from_str(&problem_yaml)?;
+    let mut problem: Problem = serde_yaml::from_str(&problem_yaml)?;
 
-    let get_case_name = if args.subdir {
-        |_: &str, index: usize| format!("{}", index)
-    } else {
-        |name: &str, index: usize| format!("{}-{}", name, index)
-    };
-    let config = GenerateConfig {
-        output_dir: args.output_dir.clone(),
-        subdir: args.subdir,
-        get_case_name: Box::new(get_case_name),
-    };
-    problem.generate(&config)?;
+    if args.output_dir.exists() {
+        std::fs::remove_dir_all(&args.output_dir)?;
+    }
+    std::fs::create_dir_all(&args.output_dir)?;
+
+    problem
+        .test
+        .bundles
+        .iter_mut()
+        .for_each(|(bundle_name, bundle)| {
+            bundle
+                .cases
+                .iter_mut()
+                .enumerate()
+                .for_each(|(index, case)| {
+                    case.name = Some(format!("{}-{}", bundle_name, index));
+                });
+        });
+    problem.generate(&args.output_dir)?;
 
     match args.export_oj {
         Some(OnlineJudge::Syzoj) => {
-            syzoj::SyzojExporter::export(&problem, &config)?;
+            syzoj::SyzojExporter::export(&problem, &args.output_dir)?;
         }
         None => {}
     }
