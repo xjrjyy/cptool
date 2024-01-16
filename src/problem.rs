@@ -12,12 +12,12 @@ pub struct Problem {
     pub name: String,
     pub programs: HashMap<String, Program>,
     pub test: Test,
-    #[serde(rename = "validator")]
-    pub validator_name: Option<String>,
     #[serde(rename = "solution")]
     pub solution_name: String,
+    #[serde(rename = "validator")]
+    pub validator_name: Option<String>,
     #[serde(rename = "checker")]
-    pub checker_name: String,
+    pub checker_name: Option<String>,
 }
 
 impl GetProgram for Problem {
@@ -67,14 +67,16 @@ impl Problem {
                     )
                     .with_context(|| format!("failed to generate test bundle `{}`", bundle_name))?;
 
-                bundle
-                    .cases
-                    .iter()
-                    .map(|case| {
-                        let answer_path = output_dir.join(&case.answer_file()?);
-                        case.check(output_dir, self, &self.checker_name, &answer_path)
-                    })
-                    .collect::<Result<_>>()?;
+                if let Some(checker_name) = &self.checker_name {
+                    bundle
+                        .cases
+                        .iter()
+                        .map(|case| {
+                            let answer_path = output_dir.join(&case.answer_file()?);
+                            case.check(output_dir, self, &checker_name, &answer_path)
+                        })
+                        .collect::<Result<_>>()?;
+                }
 
                 Ok(())
             })

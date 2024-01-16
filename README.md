@@ -30,8 +30,9 @@ programs:
       compile_args: [-O2, -std=c++14] # compile arguments, default to [-O2]
     time_limit_secs: 1.0
     memory_limit_mb: 512.0
-validator: val # optional
 solution: std
+validator: val # optional
+checker: chk # optional
 test:
   bundles: # data bundles
     sample: # bundle name
