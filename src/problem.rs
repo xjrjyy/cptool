@@ -1,4 +1,4 @@
-mod builtin_problem;
+mod builtin_program;
 pub mod test;
 
 use crate::program::{Execute, Program};
@@ -23,7 +23,7 @@ pub struct Problem {
 impl GetProgram for Problem {
     fn get_program(&self, name: &str) -> Result<&dyn Execute> {
         if name.starts_with("$") {
-            use builtin_problem::FromFile;
+            use builtin_program::FromFile;
             match name {
                 "$file" => Ok(&FromFile as &dyn Execute),
                 _ => Err(anyhow::anyhow!("builtin program `{}` not found", name)),
