@@ -14,6 +14,7 @@ programs:
   val:
     info: !cpp
       path: ./val.cpp
+      compile_args: [-O2, -I../assets/testlib/]
     time_limit_secs: 1.0
     memory_limit_mb: 512.0
 test:
