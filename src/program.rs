@@ -70,9 +70,9 @@ impl std::fmt::Display for ProgramInfo {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Program {
-    info: ProgramInfo,
-    time_limit_secs: f64,
-    memory_limit_mb: f64,
+    pub info: ProgramInfo,
+    pub time_limit_secs: f64,
+    pub memory_limit_mb: f64,
 }
 
 impl std::fmt::Display for Program {

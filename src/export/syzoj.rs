@@ -6,6 +6,21 @@ use serde::{Deserialize, Serialize};
 // https://github.com/syzoj/syzoj/blob/573796fa7670e28d428692f1d91e7ea50ee154e5/utility.js#L192
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+pub enum ProgramType {
+    // TOOD: cpp11, cpp14, cpp17
+    #[serde(rename = "cpp")]
+    Cpp,
+    // TODO: add more
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Program {
+    pub language: ProgramType,
+    #[serde(rename = "fileName")]
+    pub file_name: String,
+}
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub enum SubtaskType {
     #[serde(rename = "sum")]
     Sum,
@@ -42,7 +57,9 @@ pub struct Problem {
     pub answer_file: Option<String>,
 
     pub subtasks: Vec<Subtask>,
-    // TODO: specialJudge
+
+    #[serde(rename = "specialJudge")]
+    pub special_judge: Option<Program>,
 }
 
 pub struct SyzojExporter;
@@ -84,14 +101,39 @@ impl Exporter for SyzojExporter {
             })
             .collect::<Result<Vec<_>>>()?;
 
-        let problem = Problem {
+        let result = Problem {
             input_file: Some("#.in".to_string()),
             output_file: Some("#.ans".to_string()),
             answer_file: None,
             subtasks,
+            special_judge: match problem.checker_name.as_ref() {
+                Some(checker_name) => {
+                    let checker = problem
+                        .programs
+                        .get(checker_name)
+                        .ok_or_else(|| anyhow::anyhow!("checker `{}` not found", checker_name))?;
+                    match &checker.info {
+                        crate::program::ProgramInfo::Command(_) => {
+                            return Err(anyhow::anyhow!(
+                                "command checker is not supported by syzoj"
+                            ))
+                        }
+                        crate::program::ProgramInfo::Cpp(info) => {
+                            let checker_file = format!("{}.cpp", checker_name);
+                            let checker_path = output_dir.join(&checker_file);
+                            std::fs::copy(&info.path, &checker_path)?;
+                            Some(Program {
+                                language: ProgramType::Cpp,
+                                file_name: checker_file,
+                            })
+                        }
+                    }
+                }
+                None => None,
+            },
         };
 
-        let yaml = serde_yaml::to_string(&problem)?;
+        let yaml = serde_yaml::to_string(&result)?;
         std::fs::write(output_dir.join("data.yml"), yaml)?;
 
         Ok(())
