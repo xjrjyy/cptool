@@ -17,7 +17,9 @@ pub struct TestCase {
     pub generator_name: String,
     pub args: Vec<String>,
     #[serde(skip)]
-    pub name: Option<String>,
+    pub input_path: Option<std::path::PathBuf>,
+    #[serde(skip)]
+    pub answer_path: Option<std::path::PathBuf>,
 }
 
 impl std::fmt::Display for TestCase {
@@ -32,27 +34,8 @@ impl std::fmt::Display for TestCase {
 }
 
 impl TestCase {
-    pub fn input_file(&self) -> Result<String> {
-        Ok(format!(
-            "{}.in",
-            self.name.as_ref().ok_or_else(|| {
-                anyhow::anyhow!("test case name not found for `{}`", self.generator_name)
-            })?
-        ))
-    }
-
-    pub fn answer_file(&self) -> Result<String> {
-        Ok(format!(
-            "{}.ans",
-            self.name.as_ref().ok_or_else(|| {
-                anyhow::anyhow!("test case name not found for `{}`", self.generator_name)
-            })?
-        ))
-    }
-
     pub fn generate<T>(
         &self,
-        output_dir: &std::path::PathBuf,
         programs: &T,
         solution_name: &str,
         validator_name: Option<&str>,
@@ -60,7 +43,7 @@ impl TestCase {
     where
         T: GetProgram,
     {
-        let input_path = output_dir.join(self.input_file()?);
+        let input_path = self.input_path.as_ref().unwrap();
         if input_path.exists() {
             std::fs::remove_file(&input_path)?;
         }
@@ -68,27 +51,22 @@ impl TestCase {
         let generator = programs.get_program(&self.generator_name)?;
         generator
             .execute(&self.generator_name, self.args.clone(), None, Some(input))
-            .with_context(|| format!("failed to generate `{}`", self.name.as_ref().unwrap()))?;
+            .with_context(|| format!("failed to generate data for test case `{}`", self))?;
 
         let input = std::fs::File::open(&input_path)?;
-        let answer_path = output_dir.join(self.answer_file()?);
+        let answer_path = self.answer_path.as_ref().unwrap();
         let answer = std::fs::File::create(&answer_path)?;
         let solution = programs.get_program(&solution_name)?;
         solution
             .execute(&solution_name, vec![], Some(input), Some(answer))
-            .with_context(|| {
-                format!(
-                    "failed to generate answer for `{}`",
-                    self.name.as_ref().unwrap()
-                )
-            })?;
+            .with_context(|| format!("failed to generate answer for test case `{}`", self))?;
 
         if let Some(validator_name) = validator_name {
             let validator = programs.get_program(validator_name)?;
             let input = std::fs::File::open(&input_path)?;
             validator
                 .execute(&validator_name, vec![], Some(input), None)
-                .with_context(|| format!("failed to validate `{}`", self.name.as_ref().unwrap()))?;
+                .with_context(|| format!("failed to validate test case `{}`", self))?;
         }
 
         Ok(())
@@ -96,7 +74,6 @@ impl TestCase {
 
     pub fn check<T>(
         &self,
-        output_dir: &std::path::PathBuf,
         programs: &T,
         checker_name: &str,
         output_path: &std::path::PathBuf,
@@ -104,8 +81,8 @@ impl TestCase {
     where
         T: GetProgram,
     {
-        let input_path = output_dir.join(self.input_file()?);
-        let answer_path = output_dir.join(self.answer_file()?);
+        let input_path = self.input_path.as_ref().unwrap();
+        let answer_path = self.answer_path.as_ref().unwrap();
         let checker = programs.get_program(checker_name)?;
         // TODO: partial points
         checker
@@ -119,7 +96,7 @@ impl TestCase {
                 None,
                 None,
             )
-            .with_context(|| format!("failed to check `{}`", self.name.as_ref().unwrap()))
+            .with_context(|| format!("failed to check test case `{}`", self))
     }
 }
 
@@ -131,7 +108,6 @@ pub struct TestBundle {
 impl TestBundle {
     pub fn generate<T>(
         &self,
-        output_dir: &std::path::PathBuf,
         programs: &T,
         solution_name: &str,
         validator_name: Option<&str>,
@@ -141,7 +117,7 @@ impl TestBundle {
     {
         self.cases
             .iter()
-            .map(|case| case.generate(output_dir, programs, solution_name, validator_name))
+            .map(|case| case.generate(programs, solution_name, validator_name))
             .collect::<Result<_>>()
     }
 }

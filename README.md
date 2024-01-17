@@ -11,6 +11,11 @@ CP Tool is a command line tool for competitive programming.
 # export problem to online judge format
 # currently only support syzoj
 ./cptool -w ./example/a_plus_b --export-oj=syzoj
+# export to ./output/syzoj
+./cptool -w ./example/a_plus_b -e=syzoj --export-dir=./output
+
+# for more information
+./cptool --help
 ```
 
 `problem.yaml` is the problem description file.
@@ -21,13 +26,25 @@ programs:
   gen: # program name
     info: !command
       path: ./gen # command path
-      extra_args: [] # extra arguments, default to []
+      extra_args: [] # extra arguments, optional
     time_limit_secs: 1.0
     memory_limit_mb: 512.0
   std:
     info: !cpp
       path: ./std.cpp
       compile_args: [-O2, -std=c++14] # compile arguments, default to [-O2]
+    time_limit_secs: 1.0
+    memory_limit_mb: 512.0
+  val:
+    info: !cpp
+      path: ./val.cpp
+      compile_args: [-O2, -I../assets/testlib/]
+    time_limit_secs: 1.0
+    memory_limit_mb: 512.0
+  chk:
+    info: !cpp
+      path: ../assets/testlib/checkers/lcmp.cpp
+      compile_args: [-O2, -I../assets/testlib/]
     time_limit_secs: 1.0
     memory_limit_mb: 512.0
 solution: std

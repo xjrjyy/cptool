@@ -9,11 +9,14 @@ struct Args {
     #[arg(short, long, default_value = ".")]
     work_dir: std::path::PathBuf,
 
-    #[arg(short, long, default_value = "./data")]
+    #[arg(short, long, default_value = "./output")]
     output_dir: std::path::PathBuf,
 
     #[arg(short, long, value_enum)]
     export_oj: Option<OnlineJudge>,
+
+    #[arg(long, default_value = "./export")]
+    export_dir: Option<std::path::PathBuf>,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -41,14 +44,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .iter_mut()
                 .enumerate()
                 .for_each(|(index, case)| {
-                    case.name = Some(format!("{}-{}", bundle_name, index));
+                    let name = format!("{}-{}", bundle_name, index);
+                    case.input_path = Some(args.output_dir.join(format!("{}.in", name)));
+                    case.answer_path = Some(args.output_dir.join(format!("{}.ans", name)));
                 });
         });
-    problem.generate(&args.output_dir)?;
+    problem.generate()?;
 
     match args.export_oj {
         Some(OnlineJudge::Syzoj) => {
-            syzoj::SyzojExporter::export(&problem, &args.output_dir)?;
+            let export_dir = args
+                .export_dir
+                .expect("export path not specified")
+                .join("syzoj");
+            if export_dir.exists() {
+                std::fs::remove_dir_all(&export_dir)?;
+            }
+            std::fs::create_dir_all(&export_dir)?;
+
+            syzoj::SyzojExporter::export(&problem, &export_dir)?;
         }
         None => {}
     }

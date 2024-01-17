@@ -1,3 +1,4 @@
 /target
 /example/**/tmp
-/example/**/data
+/example/**/output
+/example/**/export

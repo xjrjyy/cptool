@@ -47,7 +47,7 @@ impl GetTestBundle for Problem {
 }
 
 impl Problem {
-    pub fn generate(&self, output_dir: &std::path::PathBuf) -> Result<()> {
+    pub fn generate(&self) -> Result<()> {
         let temp_dir = crate::utils::temp_dir();
         if temp_dir.exists() {
             std::fs::remove_dir_all(&temp_dir)?;
@@ -59,12 +59,7 @@ impl Problem {
             .iter()
             .map(|(bundle_name, bundle)| {
                 bundle
-                    .generate(
-                        output_dir,
-                        self,
-                        &self.solution_name,
-                        self.validator_name.as_deref(),
-                    )
+                    .generate(self, &self.solution_name, self.validator_name.as_deref())
                     .with_context(|| format!("failed to generate test bundle `{}`", bundle_name))?;
 
                 if let Some(checker_name) = &self.checker_name {
@@ -72,8 +67,8 @@ impl Problem {
                         .cases
                         .iter()
                         .map(|case| {
-                            let answer_path = output_dir.join(&case.answer_file()?);
-                            case.check(output_dir, self, &checker_name, &answer_path)
+                            let answer_path = case.answer_path.as_ref().unwrap();
+                            case.check(self, &checker_name, &answer_path)
                         })
                         .collect::<Result<_>>()?;
                 }

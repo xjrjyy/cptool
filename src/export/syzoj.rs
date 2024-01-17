@@ -65,7 +65,8 @@ pub struct Problem {
 pub struct SyzojExporter;
 
 impl Exporter for SyzojExporter {
-    fn export(problem: &crate::problem::Problem, output_dir: &std::path::PathBuf) -> Result<()> {
+    fn export(problem: &crate::problem::Problem, export_dir: &std::path::PathBuf) -> Result<()> {
+        let mut counter = 0usize;
         let subtasks = problem
             .test
             .tasks
@@ -80,12 +81,13 @@ impl Exporter for SyzojExporter {
                             .cases
                             .iter()
                             .map(|case| {
-                                case.name.clone().ok_or_else(|| {
-                                    anyhow::anyhow!(
-                                        "test case name not found for `{}`",
-                                        case.generator_name
-                                    )
-                                })
+                                let name = format!("{}", counter);
+                                let input_path = export_dir.join(format!("{}.in", name));
+                                let answer_path = export_dir.join(format!("{}.ans", name));
+                                counter += 1;
+                                std::fs::copy(case.input_path.as_ref().unwrap(), &input_path)?;
+                                std::fs::copy(case.answer_path.as_ref().unwrap(), &answer_path)?;
+                                Ok(name)
                             })
                             .collect::<Result<Vec<_>>>()?)
                     })
@@ -120,7 +122,7 @@ impl Exporter for SyzojExporter {
                         }
                         crate::program::ProgramInfo::Cpp(info) => {
                             let checker_file = format!("{}.cpp", checker_name);
-                            let checker_path = output_dir.join(&checker_file);
+                            let checker_path = export_dir.join(&checker_file);
                             std::fs::copy(&info.path, &checker_path)?;
                             Some(Program {
                                 language: ProgramType::Cpp,
@@ -134,7 +136,7 @@ impl Exporter for SyzojExporter {
         };
 
         let yaml = serde_yaml::to_string(&result)?;
-        std::fs::write(output_dir.join("data.yml"), yaml)?;
+        std::fs::write(export_dir.join("data.yml"), yaml)?;
 
         Ok(())
     }
