@@ -45,6 +45,7 @@ pub struct Subtask {
     pub subtask_type: SubtaskType,
     pub score: f64,
     pub cases: Vec<String>,
+    pub dependencies: Option<Vec<usize>>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -66,6 +67,18 @@ pub struct SyzojExporter;
 
 impl Exporter for SyzojExporter {
     fn export(problem: &crate::problem::Problem, export_dir: &std::path::PathBuf) -> Result<()> {
+        use std::collections::HashMap;
+        let mut task_id = HashMap::new();
+        problem
+            .test
+            .tasks
+            .keys()
+            .enumerate()
+            .for_each(|(i, task_name)| {
+                // syzoj starts from 1
+                task_id.insert(task_name, i + 1);
+            });
+
         let mut counter = 0usize;
         let subtasks = problem
             .test
@@ -95,10 +108,21 @@ impl Exporter for SyzojExporter {
                     .into_iter()
                     .flatten()
                     .collect::<Vec<_>>();
+                let dependencies = task
+                    .dependencies
+                    .iter()
+                    .map(|task_name| {
+                        task_id
+                            .get(task_name)
+                            .ok_or_else(|| anyhow::anyhow!("task `{}` not found", task_name))
+                            .copied()
+                    })
+                    .collect::<Result<Vec<_>>>()?;
                 Ok(Subtask {
                     subtask_type: task.task_type.into(),
                     score: task.score,
                     cases,
+                    dependencies: Some(dependencies),
                 })
             })
             .collect::<Result<Vec<_>>>()?;

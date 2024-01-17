@@ -74,5 +74,6 @@ test:
     main:
       score: 99.0
       type: sum
-      bundles: [sample, main]
+      bundles: [main]
+      dependencies: [sample]
 ```

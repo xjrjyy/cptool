@@ -136,6 +136,8 @@ pub struct TestTask {
     #[serde(rename = "type")]
     pub task_type: TestTaskType,
     pub bundles: Vec<String>,
+    #[serde(default)]
+    pub dependencies: Vec<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
