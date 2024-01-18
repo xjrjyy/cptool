@@ -5,6 +5,7 @@ use crate::core::problem as core_problem;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::thread;
 use test::Test;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -32,10 +33,22 @@ impl Problem {
         }
         std::fs::create_dir_all(&temp_dir)?;
 
-        let programs = self
+        let handles = self
             .programs
             .iter()
-            .map(|(name, program)| Ok((name.clone(), program.generate(name, &temp_dir)?)))
+            .map(|(name, program)| {
+                let name = name.clone();
+                let program = program.clone();
+                let temp_dir = temp_dir.clone();
+                thread::spawn(move || {
+                    let program = program.generate(&name, &temp_dir)?;
+                    Ok::<_, anyhow::Error>((name, program))
+                })
+            })
+            .collect::<Vec<_>>();
+        let programs = handles
+            .into_iter()
+            .map(|handle| handle.join().unwrap())
             .collect::<Result<HashMap<_, _>>>()?;
 
         let solution = programs
