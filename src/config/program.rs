@@ -78,23 +78,25 @@ impl ProgramInfo {
                 } else {
                     name.to_string()
                 };
-                let exe_path = output_dir.join(exe_name);
 
-                if !exe_path.exists() {
-                    let output = std::process::Command::new("g++")
-                        .arg("-o")
-                        .arg(exe_path.clone())
-                        .args(compile_args)
-                        .arg(path)
-                        .output()?;
-                    if !output.status.success() {
-                        return Err(anyhow::anyhow!(
-                            "compile error: {}\n{}",
-                            &self,
-                            String::from_utf8_lossy(&output.stderr)
-                        ));
-                    }
+                let exe_path = output_dir.join(exe_name);
+                if exe_path.exists() {
+                    std::fs::remove_file(&exe_path)?;
                 }
+                let output = std::process::Command::new("g++")
+                    .arg("-o")
+                    .arg(exe_path.clone())
+                    .args(compile_args)
+                    .arg(path)
+                    .output()?;
+                if !output.status.success() {
+                    return Err(anyhow::anyhow!(
+                        "compile error: {}\n{}",
+                        &self,
+                        String::from_utf8_lossy(&output.stderr)
+                    ));
+                }
+                println!("compile success: {}", &self);
 
                 Ok(core_problem::ProgramInfo::Command(
                     core_problem::CommandProgram {
