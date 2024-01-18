@@ -1,5 +1,5 @@
 use super::Exporter;
-use crate::problem::test::{GetTestBundle, TestTaskType};
+use crate::core::problem::test::TestTaskType;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
@@ -58,15 +58,16 @@ pub struct Problem {
     pub answer_file: Option<String>,
 
     pub subtasks: Vec<Subtask>,
-
-    #[serde(rename = "specialJudge")]
-    pub special_judge: Option<Program>,
+    // TODO: special judge
 }
 
 pub struct SyzojExporter;
 
 impl Exporter for SyzojExporter {
-    fn export(problem: &crate::problem::Problem, export_dir: &std::path::PathBuf) -> Result<()> {
+    fn export(
+        problem: &crate::core::problem::Problem,
+        export_dir: &std::path::PathBuf,
+    ) -> Result<()> {
         use std::collections::HashMap;
         let mut task_id = HashMap::new();
         problem
@@ -89,7 +90,10 @@ impl Exporter for SyzojExporter {
                     .bundles
                     .iter()
                     .map(|bundle_name| {
-                        let bundle = problem.get_test_bundle(bundle_name)?;
+                        let bundle =
+                            problem.test.bundles.get(bundle_name).ok_or_else(|| {
+                                anyhow::anyhow!("bundle `{}` not found", bundle_name)
+                            })?;
                         Ok(bundle
                             .cases
                             .iter()
@@ -98,8 +102,8 @@ impl Exporter for SyzojExporter {
                                 let input_path = export_dir.join(format!("{}.in", name));
                                 let answer_path = export_dir.join(format!("{}.ans", name));
                                 counter += 1;
-                                std::fs::copy(case.input_path.as_ref().unwrap(), &input_path)?;
-                                std::fs::copy(case.answer_path.as_ref().unwrap(), &answer_path)?;
+                                std::fs::copy(&case.input_path, &input_path)?;
+                                std::fs::copy(&case.answer_path, &answer_path)?;
                                 Ok(name)
                             })
                             .collect::<Result<Vec<_>>>()?)
@@ -132,31 +136,6 @@ impl Exporter for SyzojExporter {
             output_file: Some("#.ans".to_string()),
             answer_file: None,
             subtasks,
-            special_judge: match problem.checker_name.as_ref() {
-                Some(checker_name) => {
-                    let checker = problem
-                        .programs
-                        .get(checker_name)
-                        .ok_or_else(|| anyhow::anyhow!("checker `{}` not found", checker_name))?;
-                    match &checker.info {
-                        crate::program::ProgramInfo::Command(_) => {
-                            return Err(anyhow::anyhow!(
-                                "command checker is not supported by syzoj"
-                            ))
-                        }
-                        crate::program::ProgramInfo::Cpp(info) => {
-                            let checker_file = format!("{}.cpp", checker_name);
-                            let checker_path = export_dir.join(&checker_file);
-                            std::fs::copy(&info.path, &checker_path)?;
-                            Some(Program {
-                                language: ProgramType::Cpp,
-                                file_name: checker_file,
-                            })
-                        }
-                    }
-                }
-                None => None,
-            },
         };
 
         let yaml = serde_yaml::to_string(&result)?;

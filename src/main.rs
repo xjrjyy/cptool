@@ -1,6 +1,6 @@
 use clap::Parser;
+use cptool::config::problem as config_problem;
 use cptool::export::{syzoj, Exporter, OnlineJudge};
-use cptool::problem::Problem;
 use std::time::Instant;
 
 #[derive(Debug, Parser)]
@@ -27,29 +27,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     std::env::set_current_dir(&args.work_dir)?;
 
     let problem_yaml = std::fs::read_to_string("problem.yaml")?;
-    let mut problem: Problem = serde_yaml::from_str(&problem_yaml)?;
+    let problem_config: config_problem::Problem = serde_yaml::from_str(&problem_yaml)?;
 
-    if args.output_dir.exists() {
-        std::fs::remove_dir_all(&args.output_dir)?;
-    }
-    std::fs::create_dir_all(&args.output_dir)?;
-
-    problem
-        .test
-        .bundles
-        .iter_mut()
-        .for_each(|(bundle_name, bundle)| {
-            bundle
-                .cases
-                .iter_mut()
-                .enumerate()
-                .for_each(|(index, case)| {
-                    let name = format!("{}-{}", bundle_name, index);
-                    case.input_path = Some(args.output_dir.join(format!("{}.in", name)));
-                    case.answer_path = Some(args.output_dir.join(format!("{}.ans", name)));
-                });
-        });
-    problem.generate()?;
+    let problem = problem_config.generate(&args.output_dir)?;
 
     match args.export_oj {
         Some(OnlineJudge::Syzoj) => {

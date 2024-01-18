@@ -54,8 +54,6 @@ test:
   bundles: # data bundles
     sample: # bundle name
       cases:
-      - generator: $file # built-in generator, $file means read from file
-        args: [./input/0.in] # only one argument, path to input file
       - generator: gen # program name
         args: [20] # arguments to program
     main:
