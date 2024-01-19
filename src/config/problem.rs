@@ -73,13 +73,9 @@ impl Problem {
             })
             .transpose()?;
 
-        let test = self.test.generate(
-            &programs,
-            solution,
-            validator.as_deref(),
-            checker.as_deref(),
-            output_dir,
-        )?;
+        let test = self
+            .test
+            .generate(&programs, solution, validator.as_deref(), output_dir)?;
 
         let mut used_bundles = std::collections::HashSet::new();
         for (_, task) in &self.test.tasks {
@@ -104,6 +100,7 @@ impl Problem {
         Ok(core_problem::Problem {
             name: self.name.clone(),
             test,
+            checker: checker.cloned(),
         })
     }
 }

@@ -58,7 +58,9 @@ pub struct Problem {
     pub answer_file: Option<String>,
 
     pub subtasks: Vec<Subtask>,
-    // TODO: special judge
+
+    #[serde(rename = "specialJudge")]
+    pub special_judge: Option<Program>,
 }
 
 pub struct SyzojExporter;
@@ -131,11 +133,31 @@ impl Exporter for SyzojExporter {
             })
             .collect::<Result<Vec<_>>>()?;
 
+        let special_judge = if let Some(checker) = &problem.checker {
+            match &checker.info {
+                crate::core::program::ProgramInfo::Command(_) => Err(anyhow::anyhow!(
+                    "command program is not supported as special judge in syzoj exporter"
+                )),
+                crate::core::program::ProgramInfo::Cpp(program) => {
+                    let name = "spj.cpp".to_string();
+                    let path = export_dir.join(&name);
+                    std::fs::copy(&program.source_path, &path)?;
+                    Ok(Some(Program {
+                        language: ProgramType::Cpp,
+                        file_name: name,
+                    }))
+                }
+            }?
+        } else {
+            None
+        };
+
         let result = Problem {
             input_file: Some("#.in".to_string()),
             output_file: Some("#.ans".to_string()),
             answer_file: None,
             subtasks,
+            special_judge,
         };
 
         let yaml = serde_yaml::to_string(&result)?;

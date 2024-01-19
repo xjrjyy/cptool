@@ -7,16 +7,11 @@ pub struct TestCase {
     pub args: Vec<String>,
     pub input_path: std::path::PathBuf,
     pub answer_path: std::path::PathBuf,
-    pub checker: Option<Program>,
 }
 
 impl TestCase {
     // TODO: result struct
-    pub fn check(&self, output_path: &std::path::PathBuf) -> Result<()> {
-        let checker = self
-            .checker
-            .as_ref()
-            .ok_or_else(|| anyhow::anyhow!("checker not found"))?;
+    pub fn check(&self, output_path: &std::path::PathBuf, checker: &Program) -> Result<()> {
         // TODO: partial points
         // TODO: error context
         checker.execute(

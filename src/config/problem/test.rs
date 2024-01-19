@@ -27,7 +27,6 @@ impl TestCase {
         programs: &HashMap<String, core_program::Program>,
         solution: &core_program::Program,
         validator: Option<&core_program::Program>,
-        checker: Option<&core_program::Program>,
         input_path: &std::path::PathBuf,
         answer_path: &std::path::PathBuf,
     ) -> Result<core_problem::test::TestCase> {
@@ -62,7 +61,6 @@ impl TestCase {
             args: self.args.clone(),
             input_path: input_path.clone(),
             answer_path: answer_path.clone(),
-            checker: checker.cloned(),
         })
     }
 }
@@ -122,7 +120,6 @@ impl Test {
         programs: &HashMap<String, core_program::Program>,
         solution: &core_program::Program,
         validator: Option<&core_program::Program>,
-        checker: Option<&core_program::Program>,
         output_dir: &std::path::PathBuf,
     ) -> Result<core_problem::test::Test> {
         let mut bundles = HashMap::new();
@@ -136,7 +133,6 @@ impl Test {
                     programs,
                     solution,
                     validator,
-                    checker,
                     &input_path,
                     &answer_path,
                 )?);
