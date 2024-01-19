@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CommandProgram {
-    pub path: String,
+    pub path: std::path::PathBuf,
     #[serde(default)]
     pub extra_args: Vec<String>,
 }
@@ -14,7 +14,7 @@ impl std::fmt::Display for CommandProgram {
         write!(
             f,
             "{} (extra args: `{}`)",
-            self.path,
+            self.path.display(),
             self.extra_args.join(" ")
         )
     }
@@ -22,7 +22,7 @@ impl std::fmt::Display for CommandProgram {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CppProgram {
-    pub path: String,
+    pub path: std::path::PathBuf,
     #[serde(default = "default_compile_args")]
     pub compile_args: Vec<String>,
 }
@@ -36,7 +36,7 @@ impl std::fmt::Display for CppProgram {
         write!(
             f,
             "{} (compile args: `{}`)",
-            self.path,
+            self.path.display(),
             self.compile_args.join(" ")
         )
     }
@@ -98,12 +98,11 @@ impl ProgramInfo {
                 }
                 println!("compile success: {}", &self);
 
-                Ok(core_problem::ProgramInfo::Command(
-                    core_problem::CommandProgram {
-                        path: exe_path,
-                        extra_args: vec![],
-                    },
-                ))
+                Ok(core_problem::ProgramInfo::Cpp(core_problem::CppProgram {
+                    path: exe_path,
+                    source_path: path.into(),
+                    compile_args: compile_args.clone(),
+                }))
             }
         }
     }
@@ -120,7 +119,7 @@ impl std::fmt::Display for Program {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "{} (time limit: {}s, memory limit: {}mb)",
+            "{} (time limit: {}s, memory limit: {}MB)",
             self.info, self.time_limit_secs, self.memory_limit_mb
         )
     }
