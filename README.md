@@ -75,3 +75,8 @@ test:
       bundles: [main]
       dependencies: [sample] # task names
 ```
+
+## Notes
+
++ Syzoj export is not fully supported yet.
++ Generator use multiple threads to generate data, so it may be slower than single thread generator.
