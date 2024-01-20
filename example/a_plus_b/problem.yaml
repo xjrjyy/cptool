@@ -11,21 +11,7 @@ programs:
       compile_args: [-O2, -std=c++14]
     time_limit_secs: 1.0
     memory_limit_mb: 512.0
-  val:
-    info: !cpp
-      path: ./val.cpp
-      compile_args: [-O2, -I../assets/testlib/]
-    time_limit_secs: 1.0
-    memory_limit_mb: 512.0
-  chk:
-    info: !cpp
-      path: ../assets/testlib/checkers/lcmp.cpp
-      compile_args: [-O2, -I../assets/testlib/]
-    time_limit_secs: 1.0
-    memory_limit_mb: 512.0
 solution: std
-validator: val
-checker: chk
 test:
   bundles:
     sample:
@@ -47,6 +33,6 @@ test:
       bundles: [sample]
     main:
       score: 99.0
-      type: sum
+      type: min
       bundles: [main]
       dependencies: [sample]

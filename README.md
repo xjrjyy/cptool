@@ -73,5 +73,5 @@ test:
       score: 99.0
       type: sum
       bundles: [main]
-      dependencies: [sample]
+      dependencies: [sample] # task names
 ```
