@@ -63,7 +63,7 @@ impl ProgramInfo {
     pub fn generate(
         &self,
         name: &str,
-        output_dir: &std::path::PathBuf,
+        output_dir: &std::path::Path,
     ) -> Result<core_problem::ProgramInfo> {
         match &self {
             ProgramInfo::Command(CommandProgram { path, extra_args }) => Ok(
@@ -129,7 +129,7 @@ impl Program {
     pub fn generate(
         &self,
         name: &str,
-        output_dir: &std::path::PathBuf,
+        output_dir: &std::path::Path,
     ) -> Result<core_problem::Program> {
         Ok(core_problem::Program {
             info: self.info.generate(name, output_dir)?,

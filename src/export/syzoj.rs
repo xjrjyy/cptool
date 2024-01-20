@@ -66,10 +66,7 @@ pub struct Problem {
 pub struct SyzojExporter;
 
 impl Exporter for SyzojExporter {
-    fn export(
-        problem: &crate::core::problem::Problem,
-        export_dir: &std::path::PathBuf,
-    ) -> Result<()> {
+    fn export(problem: &crate::core::problem::Problem, export_dir: &std::path::Path) -> Result<()> {
         use std::collections::HashMap;
         let mut task_id = HashMap::new();
         problem
@@ -86,8 +83,8 @@ impl Exporter for SyzojExporter {
         let subtasks = problem
             .test
             .tasks
-            .iter()
-            .map(|(_, task)| {
+            .values()
+            .map(|task| {
                 let cases = task
                     .bundles
                     .iter()
@@ -96,7 +93,7 @@ impl Exporter for SyzojExporter {
                             problem.test.bundles.get(bundle_name).ok_or_else(|| {
                                 anyhow::anyhow!("bundle `{}` not found", bundle_name)
                             })?;
-                        Ok(bundle
+                        bundle
                             .cases
                             .iter()
                             .map(|case| {
@@ -104,11 +101,11 @@ impl Exporter for SyzojExporter {
                                 let input_path = export_dir.join(format!("{}.in", name));
                                 let answer_path = export_dir.join(format!("{}.ans", name));
                                 counter += 1;
-                                std::fs::copy(&case.input_path, &input_path)?;
-                                std::fs::copy(&case.answer_path, &answer_path)?;
+                                std::fs::copy(&case.input_path, input_path)?;
+                                std::fs::copy(&case.answer_path, answer_path)?;
                                 Ok(name)
                             })
-                            .collect::<Result<Vec<_>>>()?)
+                            .collect::<Result<Vec<_>>>()
                     })
                     .collect::<Result<Vec<_>>>()?
                     .into_iter()
@@ -141,7 +138,7 @@ impl Exporter for SyzojExporter {
                 crate::core::program::ProgramInfo::Cpp(program) => {
                     let name = "spj.cpp".to_string();
                     let path = export_dir.join(&name);
-                    std::fs::copy(&program.source_path, &path)?;
+                    std::fs::copy(&program.source_path, path)?;
                     Ok(Some(Program {
                         language: ProgramType::Cpp,
                         file_name: name,

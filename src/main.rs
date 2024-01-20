@@ -31,20 +31,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let problem = problem_config.generate(&args.output_dir)?;
 
-    match args.export_oj {
-        Some(OnlineJudge::Syzoj) => {
-            let export_dir = args
-                .export_dir
-                .expect("export path not specified")
-                .join("syzoj");
-            if export_dir.exists() {
-                std::fs::remove_dir_all(&export_dir)?;
-            }
-            std::fs::create_dir_all(&export_dir)?;
-
-            syzoj::SyzojExporter::export(&problem, &export_dir)?;
+    if let Some(OnlineJudge::Syzoj) = args.export_oj {
+        let export_dir = args
+            .export_dir
+            .expect("export path not specified")
+            .join("syzoj");
+        if export_dir.exists() {
+            std::fs::remove_dir_all(&export_dir)?;
         }
-        None => {}
+        std::fs::create_dir_all(&export_dir)?;
+
+        syzoj::SyzojExporter::export(&problem, &export_dir)?;
     }
 
     let elapsed = start.elapsed();

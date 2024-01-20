@@ -11,7 +11,7 @@ pub struct TestCase {
 
 impl TestCase {
     // TODO: result struct
-    pub fn check(&self, output_path: &std::path::PathBuf, checker: &Program) -> Result<()> {
+    pub fn check(&self, output_path: &std::path::Path, checker: &Program) -> Result<()> {
         // TODO: partial points
         // TODO: error context
         checker.execute(

@@ -75,10 +75,10 @@ impl Problem {
 
         let test = self
             .test
-            .generate(&programs, solution, validator.as_deref(), output_dir)?;
+            .generate(&programs, solution, validator, output_dir)?;
 
         let mut used_bundles = std::collections::HashSet::new();
-        for (_, task) in &self.test.tasks {
+        for task in self.test.tasks.values() {
             for bundle_name in task.bundles.iter() {
                 if self.test.bundles.get(bundle_name).is_none() {
                     return Err(anyhow::anyhow!("test bundle `{}` not found", bundle_name));
@@ -86,7 +86,7 @@ impl Problem {
                 used_bundles.insert(bundle_name);
             }
         }
-        for (bundle_name, _) in &self.test.bundles {
+        for bundle_name in self.test.bundles.keys() {
             if !used_bundles.contains(bundle_name) {
                 println!("warning: unused test bundle `{}`", bundle_name);
             }

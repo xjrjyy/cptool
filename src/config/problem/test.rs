@@ -31,9 +31,9 @@ impl TestCase {
         answer_path: &std::path::PathBuf,
     ) -> Result<core_problem::test::TestCase> {
         if input_path.exists() {
-            std::fs::remove_file(&input_path)?;
+            std::fs::remove_file(input_path)?;
         }
-        let input = std::fs::File::create(&input_path)?;
+        let input = std::fs::File::create(input_path)?;
         let generator = programs.get(&self.generator_name).with_context(|| {
             format!(
                 "generator `{}` not found for test case `{}`",
@@ -44,14 +44,14 @@ impl TestCase {
             .execute(self.args.clone(), None, Some(input))
             .with_context(|| format!("failed to generate data for test case `{}`", self))?;
 
-        let input = std::fs::File::open(&input_path)?;
-        let answer = std::fs::File::create(&answer_path)?;
+        let input = std::fs::File::open(input_path)?;
+        let answer = std::fs::File::create(answer_path)?;
         solution
             .execute(vec![], Some(input), Some(answer))
             .with_context(|| format!("failed to generate answer for test case `{}`", self))?;
 
         if let Some(validator) = validator {
-            let input = std::fs::File::open(&input_path)?;
+            let input = std::fs::File::open(input_path)?;
             validator
                 .execute(vec![], Some(input), None)
                 .with_context(|| format!("failed to validate test case `{}`", self))?;
@@ -78,9 +78,9 @@ pub enum TestTaskType {
     Min,
 }
 
-impl Into<core_problem::test::TestTaskType> for TestTaskType {
-    fn into(self) -> core_problem::test::TestTaskType {
-        match self {
+impl From<TestTaskType> for core_problem::test::TestTaskType {
+    fn from(val: TestTaskType) -> Self {
+        match val {
             TestTaskType::Sum => core_problem::test::TestTaskType::Sum,
             TestTaskType::Min => core_problem::test::TestTaskType::Min,
         }
@@ -120,7 +120,7 @@ impl Test {
         programs: &HashMap<String, core_program::Program>,
         solution: &core_program::Program,
         validator: Option<&core_program::Program>,
-        output_dir: &std::path::PathBuf,
+        output_dir: &std::path::Path,
     ) -> Result<core_problem::test::Test> {
         let mut bundles = HashMap::new();
         for (bundle_name, bundle) in &self.bundles {
