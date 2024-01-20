@@ -122,26 +122,44 @@ impl Test {
         validator: Option<&core_program::Program>,
         output_dir: &std::path::Path,
     ) -> Result<core_problem::test::Test> {
-        let mut bundles = HashMap::new();
-        for (bundle_name, bundle) in &self.bundles {
-            let mut cases = vec![];
-            for (index, case) in bundle.cases.iter().enumerate() {
-                let case_name = format!("{}-{}", bundle_name, index);
-                let input_path = output_dir.join(format!("{}.in", case_name));
-                let answer_path = output_dir.join(format!("{}.ans", case_name));
-                cases.push(case.generate(
-                    programs,
-                    solution,
-                    validator,
-                    &input_path,
-                    &answer_path,
-                )?);
-            }
-            bundles.insert(
-                bundle_name.clone(),
-                core_problem::test::TestBundle { cases },
-            );
-        }
+        let bundles = self
+            .bundles
+            .iter()
+            .map(|(bundle_name, bundle)| {
+                let handles = bundle
+                    .cases
+                    .iter()
+                    .enumerate()
+                    .map(|(index, case)| {
+                        let case = case.clone();
+                        let case_name = format!("{}-{}", bundle_name, index);
+                        let input_path = output_dir.join(format!("{}.in", case_name));
+                        let answer_path = output_dir.join(format!("{}.ans", case_name));
+                        let programs = programs.clone();
+                        let solution = solution.clone();
+                        let validator = validator.cloned();
+                        std::thread::spawn(move || {
+                            case.generate(
+                                &programs,
+                                &solution,
+                                validator.as_ref(),
+                                &input_path,
+                                &answer_path,
+                            )
+                        })
+                    })
+                    .collect::<Vec<_>>();
+                let cases = handles
+                    .into_iter()
+                    .map(|handle| handle.join().unwrap())
+                    .collect::<Result<Vec<_>>>()?;
+
+                Ok((
+                    bundle_name.clone(),
+                    core_problem::test::TestBundle { cases },
+                ))
+            })
+            .collect::<Result<HashMap<_, _>>>()?;
 
         let mut tasks = HashMap::new();
         for (task_name, task) in &self.tasks {
