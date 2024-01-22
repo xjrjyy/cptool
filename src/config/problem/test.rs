@@ -89,6 +89,7 @@ impl From<TestTaskType> for core_problem::test::TestTaskType {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TestTask {
+    pub name: String,
     pub score: f64,
     #[serde(rename = "type")]
     pub task_type: TestTaskType,
@@ -100,6 +101,7 @@ pub struct TestTask {
 impl TestTask {
     pub fn generate(&self) -> Result<core_problem::test::TestTask> {
         Ok(core_problem::test::TestTask {
+            name: self.name.clone(),
             score: self.score,
             task_type: self.task_type.into(),
             bundles: self.bundles.clone(),
@@ -111,7 +113,7 @@ impl TestTask {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Test {
     pub bundles: HashMap<String, TestBundle>,
-    pub tasks: HashMap<String, TestTask>,
+    pub tasks: Vec<TestTask>,
 }
 
 impl Test {
@@ -161,10 +163,11 @@ impl Test {
             })
             .collect::<Result<HashMap<_, _>>>()?;
 
-        let mut tasks = HashMap::new();
-        for (task_name, task) in &self.tasks {
-            tasks.insert(task_name.clone(), task.generate()?);
-        }
+        let tasks = self
+            .tasks
+            .iter()
+            .map(|task| task.generate())
+            .collect::<Result<Vec<_>>>()?;
 
         Ok(core_problem::test::Test { bundles, tasks })
     }

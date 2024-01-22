@@ -69,21 +69,15 @@ impl Exporter for SyzojExporter {
     fn export(problem: &crate::core::problem::Problem, export_dir: &std::path::Path) -> Result<()> {
         use std::collections::HashMap;
         let mut task_id = HashMap::new();
-        problem
-            .test
-            .tasks
-            .keys()
-            .enumerate()
-            .for_each(|(i, task_name)| {
-                // syzoj starts from 1
-                task_id.insert(task_name, i + 1);
-            });
+        problem.test.tasks.iter().enumerate().for_each(|(i, task)| {
+            task_id.insert(&task.name, i);
+        });
 
         let mut counter = 0usize;
         let subtasks = problem
             .test
             .tasks
-            .values()
+            .iter()
             .map(|task| {
                 let cases = task
                     .bundles
@@ -118,7 +112,7 @@ impl Exporter for SyzojExporter {
                         task_id
                             .get(task_name)
                             .ok_or_else(|| anyhow::anyhow!("task `{}` not found", task_name))
-                            .copied()
+                            .map(|&id| id + 1)
                     })
                     .collect::<Result<Vec<_>>>()?;
                 Ok(Subtask {

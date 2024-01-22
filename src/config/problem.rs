@@ -78,7 +78,7 @@ impl Problem {
             .generate(&programs, solution, validator, output_dir)?;
 
         let mut used_bundles = std::collections::HashSet::new();
-        for task in self.test.tasks.values() {
+        for task in self.test.tasks.iter() {
             for bundle_name in task.bundles.iter() {
                 if self.test.bundles.get(bundle_name).is_none() {
                     return Err(anyhow::anyhow!("test bundle `{}` not found", bundle_name));
@@ -94,7 +94,7 @@ impl Problem {
 
         println!(
             "total score: {:.2}",
-            self.test.tasks.values().map(|task| task.score).sum::<f64>()
+            self.test.tasks.iter().map(|task| task.score).sum::<f64>()
         );
 
         Ok(core_problem::Problem {

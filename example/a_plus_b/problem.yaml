@@ -27,12 +27,12 @@ test:
       - generator: gen
         args: [1000000000]
   tasks:
-    sample:
-      score: 1.0
-      type: min
-      bundles: [sample]
-    main:
-      score: 99.0
-      type: min
-      bundles: [main]
-      dependencies: [sample]
+  - name: sample
+    score: 1.0
+    type: min
+    bundles: [sample]
+  - name: main
+    score: 99.0
+    type: min
+    bundles: [main]
+    dependencies: [sample]

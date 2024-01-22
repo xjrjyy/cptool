@@ -65,15 +65,15 @@ test:
       - generator: gen
         args: [1000000000]
   tasks: # subtasks
-    sample: # task name
-      score: 1.0
-      type: min
-      bundles: [sample] # bundle names
-    main:
-      score: 99.0
-      type: sum
-      bundles: [main]
-      dependencies: [sample] # task names
+  - name: sample
+    score: 1.0
+    type: min
+    bundles: [sample] # bundle names
+  - name: main
+    score: 99.0
+    type: sum
+    bundles: [main]
+    dependencies: [sample] # task names
 ```
 
 ## Notes

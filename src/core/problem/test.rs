@@ -39,6 +39,7 @@ pub enum TestTaskType {
 
 #[derive(Clone, Debug)]
 pub struct TestTask {
+    pub name: String,
     pub score: f64,
     pub task_type: TestTaskType,
     pub bundles: Vec<String>,
@@ -48,5 +49,5 @@ pub struct TestTask {
 #[derive(Clone, Debug)]
 pub struct Test {
     pub bundles: HashMap<String, TestBundle>,
-    pub tasks: HashMap<String, TestTask>,
+    pub tasks: Vec<TestTask>,
 }
